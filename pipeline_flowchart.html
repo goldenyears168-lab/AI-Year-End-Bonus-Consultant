@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GoldenBonus AI - Pipeline 流程圖</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            text-align: center;
+            color: #2d3748;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #718096;
+            margin-bottom: 40px;
+            font-size: 1.1em;
+        }
+
+        .flowchart {
+            position: relative;
+            width: 100%;
+            min-height: 800px;
+            margin: 40px 0;
+        }
+
+        .stage {
+            position: relative;
+            margin: 30px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .node {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+            min-width: 280px;
+            text-align: center;
+            position: relative;
+            z-index: 10;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .node:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.6);
+        }
+
+        .node-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .node-desc {
+            font-size: 0.95em;
+            opacity: 0.9;
+            line-height: 1.5;
+        }
+
+        .node.input {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            box-shadow: 0 10px 30px rgba(245, 87, 108, 0.4);
+        }
+
+        .node.input:hover {
+            box-shadow: 0 15px 40px rgba(245, 87, 108, 0.6);
+        }
+
+        .node.calculator {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            box-shadow: 0 10px 30px rgba(79, 172, 254, 0.4);
+        }
+
+        .node.calculator:hover {
+            box-shadow: 0 15px 40px rgba(79, 172, 254, 0.6);
+        }
+
+        .node.risk {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            box-shadow: 0 10px 30px rgba(250, 112, 154, 0.4);
+        }
+
+        .node.risk:hover {
+            box-shadow: 0 15px 40px rgba(250, 112, 154, 0.6);
+        }
+
+        .node.advisor {
+            background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
+            box-shadow: 0 10px 30px rgba(48, 207, 208, 0.4);
+        }
+
+        .node.advisor:hover {
+            box-shadow: 0 15px 40px rgba(48, 207, 208, 0.6);
+        }
+
+        .node.output {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            color: #2d3748;
+            box-shadow: 0 10px 30px rgba(168, 237, 234, 0.4);
+        }
+
+        .node.output:hover {
+            box-shadow: 0 15px 40px rgba(168, 237, 234, 0.6);
+        }
+
+        .arrow {
+            position: absolute;
+            width: 4px;
+            height: 60px;
+            background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 5;
+            border-radius: 2px;
+        }
+
+        .arrow::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-top: 12px solid #764ba2;
+        }
+
+        .context-box {
+            position: absolute;
+            right: -320px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #f7fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 20px;
+            width: 300px;
+            font-size: 0.85em;
+            color: #2d3748;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .context-box h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 1em;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 8px;
+        }
+
+        .context-box ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .context-box li {
+            padding: 5px 0;
+            color: #4a5568;
+            border-left: 3px solid #cbd5e0;
+            padding-left: 10px;
+            margin: 5px 0;
+        }
+
+        .context-box li strong {
+            color: #2d3748;
+        }
+
+        .legend {
+            margin-top: 60px;
+            padding: 30px;
+            background: #f7fafc;
+            border-radius: 15px;
+            border: 2px solid #e2e8f0;
+        }
+
+        .legend h2 {
+            color: #2d3748;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .legend-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .legend-color {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            flex-shrink: 0;
+        }
+
+        .legend-text {
+            color: #4a5568;
+            line-height: 1.6;
+        }
+
+        .legend-text strong {
+            color: #2d3748;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        @media (max-width: 1200px) {
+            .context-box {
+                position: static;
+                transform: none;
+                width: 100%;
+                margin-top: 20px;
+            }
+
+            .flowchart {
+                min-height: auto;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 1.8em;
+            }
+
+            .node {
+                min-width: 100%;
+                padding: 20px;
+            }
+
+            .legend-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .error-path {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px;
+            height: 60px;
+            background: linear-gradient(180deg, #fc8181 0%, #f56565 100%);
+            z-index: 5;
+            border-radius: 2px;
+        }
+
+        .error-path::after {
+            content: '❌';
+            position: absolute;
+            bottom: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 1.2em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 GoldenBonus AI Pipeline 流程圖</h1>
+        <p class="subtitle">從 CEO 決策槓桿到決策備忘錄的完整數據流（精實方案）</p>
+
+        <div class="flowchart">
+            <!-- Stage 1: User Input -->
+            <div class="stage">
+                <div class="node input">
+                    <div class="node-title">📥 CEO 決策槓桿 (main.py)</div>
+                    <div class="node-desc">Streamlit 側邊欄收集數據<br>🛡️ 生存槓桿（安全氣囊）<br>🚀 激勵槓桿（人才投資策略）<br>💰 現實槓桿（財務底氣）</div>
+                </div>
+                <div class="context-box">
+                    <h3>初始 Context</h3>
+                    <ul>
+                        <li><strong>user_input</strong>: {<br>
+                            &nbsp;&nbsp;revenue, net_profit,<br>
+                            &nbsp;&nbsp;employees, avg_salary,<br>
+                            &nbsp;&nbsp;retention_rate, style<br>
+                            }</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="arrow"></div>
+
+            <!-- Stage 2: Pipeline Initialization -->
+            <div class="stage">
+                <div class="node">
+                    <div class="node-title">🚀 Pipeline 初始化</div>
+                    <div class="node-desc">建立 Pipeline 實例<br>註冊兩個節點（精實方案）</div>
+                </div>
+                <div class="context-box">
+                    <h3>Pipeline 結構</h3>
+                    <ul>
+                        <li><strong>CalculatorNode</strong><br>計算 + 風險檢查</li>
+                        <li><strong>AdvisorNode</strong><br>Gemini API 顧問</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="arrow"></div>
+
+            <!-- Stage 3: Calculator Node -->
+            <div class="stage">
+                <div class="node calculator">
+                    <div class="node-title">🔢 CalculatorNode</div>
+                    <div class="node-desc">計算獎金池、人均金額、平均月數<br>安全檢查：防止除以零<br>風險檢查：低於 0.5 個月、保留盈餘過低</div>
+                </div>
+                <div class="context-box">
+                    <h3>新增到 Context</h3>
+                    <ul>
+                        <li><strong>metrics</strong>: {<br>
+                            &nbsp;&nbsp;total_pool,<br>
+                            &nbsp;&nbsp;per_head,<br>
+                            &nbsp;&nbsp;months<br>
+                            }</li>
+                        <li><strong>risks</strong>: [<br>
+                            &nbsp;&nbsp;"⚠️ 警告訊息..."<br>
+                            ]</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="arrow"></div>
+
+            <!-- Stage 4: Advisor Node -->
+            <div class="stage">
+                <div class="node advisor">
+                    <div class="node-title">🤖 AdvisorNode</div>
+                    <div class="node-desc">組合 System Prompt + 知識庫<br>呼叫 Gemini 2.0 Flash API<br>生成「決策備忘錄」（黃金三段式）</div>
+                </div>
+                <div class="context-box">
+                    <h3>新增到 Context</h3>
+                    <ul>
+                        <li><strong>ai_response</strong>:<br>
+                            "決策備忘錄格式：<br>
+                            🎯 戰略判斷<br>
+                            ⚖️ 取捨分析<br>
+                            💬 關鍵對話"</li>
+                        <li><strong>system_prompt</strong>:<br>
+                            "包含知識庫 + 反直覺洞察規則"</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="arrow"></div>
+
+            <!-- Stage 6: Output -->
+            <div class="stage">
+                <div class="node output">
+                    <div class="node-title">📊 輸出結果</div>
+                    <div class="node-desc">顯示 Metrics 儀表板<br>渲染「決策備忘錄」<br>互動諮詢區（聊天功能）</div>
+                </div>
+                <div class="context-box">
+                    <h3>最終 Context</h3>
+                    <ul>
+                        <li>user_input ✓</li>
+                        <li>metrics ✓</li>
+                        <li>risks ✓</li>
+                        <li>ai_response ✓</li>
+                        <li>system_prompt ✓</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Legend -->
+        <div class="legend">
+            <h2>📋 流程說明</h2>
+            <div class="legend-grid">
+                <div class="legend-item">
+                    <div class="legend-color" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);"></div>
+                    <div class="legend-text">
+                        <strong>用戶輸入層</strong>
+                        Streamlit UI 收集數據，建立初始 context
+                    </div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);"></div>
+                    <div class="legend-text">
+                        <strong>計算節點（精實方案）</strong>
+                        執行數學運算 + 風險檢查<br>
+                        計算獎金池、人均金額、平均月數<br>
+                        檢查低於 0.5 個月、保留盈餘過低
+                    </div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);"></div>
+                    <div class="legend-text">
+                        <strong>AI 顧問節點（Gemini 2.0 Flash）</strong>
+                        組合知識庫 + 反直覺洞察規則<br>
+                        生成「決策備忘錄」（黃金三段式）<br>
+                        支援互動聊天功能
+                    </div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);"></div>
+                    <div class="legend-text">
+                        <strong>輸出層</strong>
+                        在 Streamlit 介面顯示結果
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-top: 30px; padding: 20px; background: white; border-radius: 10px; border-left: 4px solid #667eea;">
+                <h3 style="color: #667eea; margin-bottom: 15px;">🔄 Context 數據流</h3>
+                <p style="color: #4a5568; line-height: 1.8;">
+                    Context 是一個 Python Dictionary，在 Pipeline 中像「接力棒」一樣傳遞。每個節點接收 context，添加自己的處理結果，然後傳給下一個節點。
+                    精實方案：只有 2 個節點，CalculatorNode 同時處理計算和風險檢查，降低架構複雜度。
+                </p>
+            </div>
+            
+            <div style="margin-top: 20px; padding: 20px; background: #f0f9ff; border-radius: 10px; border-left: 4px solid #3b82f6;">
+                <h3 style="color: #1e40af; margin-bottom: 15px;">💡 精實設計原則</h3>
+                <p style="color: #4a5568; line-height: 1.8;">
+                    <strong>MVP 階段</strong>：將風險檢查合併到 CalculatorNode，減少節點數量，快速驗證核心價值。<br>
+                    <strong>未來擴展</strong>：如果風險規則超過 5 條，或需要外部 API，可以重構為獨立的 RiskScannerNode。
+                </p>
+            </div>
+
+            <div style="margin-top: 20px; padding: 20px; background: #fff5f5; border-radius: 10px; border-left: 4px solid #fc8181;">
+                <h3 style="color: #c53030; margin-bottom: 15px;">⚠️ 錯誤處理</h3>
+                <p style="color: #4a5568; line-height: 1.8;">
+                    如果任何節點執行失敗，Pipeline 會捕獲異常，將錯誤訊息存入 context["error"]，然後停止執行。
+                    這樣可以避免整個應用程式崩潰，並提供友好的錯誤提示。
+                </p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
