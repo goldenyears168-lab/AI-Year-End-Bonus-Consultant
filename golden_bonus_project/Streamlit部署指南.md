@@ -66,7 +66,7 @@ golden_bonus_project/main.py
 3. 點擊 "New secret"
 4. 新增：
    - **Key**: `GEMINI_API_KEY`
-   - **Value**: `AIzaSyD8YF-WMvUdDJOIJ8p7Eh9B06-I_ZfPJVs`
+   - **Value**: `your-gemini-api-key-here`（請填入您的真實 API Key）
 
 ### 步驟 4：部署
 
@@ -137,7 +137,7 @@ https://github.com/goldenyears168-lab/AI-Year-End-Bonus-Consultant
 Repository: goldenyears168-lab/AI-Year-End-Bonus-Consultant
 Branch: main
 Main file path: golden_bonus_project/main.py
-Secrets: GEMINI_API_KEY = AIzaSyD8YF-WMvUdDJOIJ8p7Eh9B06-I_ZfPJVs
+Secrets: GEMINI_API_KEY = your-gemini-api-key-here
 ```
 
 ## 🆘 如果還是有問題

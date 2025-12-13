@@ -14,7 +14,7 @@
 在 Streamlit Cloud 的 Secrets 中，确保格式为 **TOML** 格式：
 
 ```toml
-GEMINI_API_KEY = "AIzaSyBXtR92jUgrhxaxF7_sC6DN1RnwIiAxT_8"
+GEMINI_API_KEY = "your-gemini-api-key-here"
 ```
 
 **重要检查点**：
@@ -112,12 +112,12 @@ st.write("API Key 前10个字符:", st.secrets.get("GEMINI_API_KEY", "NOT FOUND"
 **正确格式**：
 ```toml
 # Streamlit Cloud Secrets (TOML)
-GEMINI_API_KEY = "AIzaSyBXtR92jUgrhxaxF7_sC6DN1RnwIiAxT_8"
+GEMINI_API_KEY = "your-gemini-api-key-here"
 ```
 
 ```env
 # 本地 .env 文件
-GEMINI_API_KEY=AIzaSyBXtR92jUgrhxaxF7_sC6DN1RnwIiAxT_8
+GEMINI_API_KEY=your-gemini-api-key-here
 ```
 
 ## 📝 检查清单

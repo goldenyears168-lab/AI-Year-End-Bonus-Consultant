@@ -1,6 +1,13 @@
-# 環境變數
+# 環境變數和敏感信息
 .env
+.env.local
+.env.*.local
 .streamlit/secrets.toml
+*.key
+*secret*
+*api*key*
+# 防止意外提交包含 API key 的文件
+*故障排除.md
 
 # Python
 __pycache__/
