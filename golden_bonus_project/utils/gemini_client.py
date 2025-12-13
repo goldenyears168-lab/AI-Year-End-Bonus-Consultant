@@ -6,12 +6,27 @@ import streamlit as st
 
 # 自動判斷是本地開發還是雲端
 load_dotenv()
-api_key = os.getenv("GEMINI_API_KEY") or st.secrets.get("GEMINI_API_KEY", "")
 
-if not api_key:
-    raise ValueError("未找到 GEMINI_API_KEY，請檢查 .env 或 Streamlit Secrets")
-
-genai.configure(api_key=api_key)
+def get_api_key():
+    """
+    獲取 API Key，優先使用 Streamlit Secrets（雲端），其次使用環境變數（本地）
+    """
+    # 優先使用 Streamlit Secrets（適用於 Streamlit Cloud）
+    try:
+        if hasattr(st, 'secrets') and st.secrets:
+            api_key = st.secrets.get("GEMINI_API_KEY", "")
+            if api_key:
+                return api_key
+    except Exception:
+        pass  # 如果 st.secrets 不可用（非 Streamlit 環境），繼續嘗試環境變數
+    
+    # 其次使用環境變數（適用於本地開發）
+    api_key = os.getenv("GEMINI_API_KEY", "")
+    if api_key:
+        return api_key
+    
+    # 如果都找不到，返回 None
+    return None
 
 def call_gemini_logic(system_prompt, user_message, history=[], model="gemini-2.0-flash-exp", temperature=0.7, max_tokens=2000):
     """
@@ -28,7 +43,14 @@ def call_gemini_logic(system_prompt, user_message, history=[], model="gemini-2.0
     Returns:
         str: AI 回應內容，或錯誤訊息
     """
+    # 動態獲取 API Key（每次調用時重新讀取，確保使用最新的 Secrets）
+    api_key = get_api_key()
+    if not api_key:
+        return "⚠️ 錯誤：未找到 GEMINI_API_KEY。請檢查 Streamlit Secrets 或 .env 檔案。"
+    
     try:
+        # 每次調用時重新配置（確保使用最新的 API Key）
+        genai.configure(api_key=api_key)
         # 使用 system_instruction 參數設定系統提示詞
         model_instance = genai.GenerativeModel(
             model_name=model,

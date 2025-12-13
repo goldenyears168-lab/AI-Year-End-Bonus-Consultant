@@ -324,7 +324,7 @@ flowchart TD
     
     StartContext --> CalcNode[🔢 CalculatorNode.execute]
     
-    CalcNode --> AfterCalc[📦 Context + metrics<br/>metrics: {<br/>  total_pool,<br/>  per_head,<br/>  months<br/>}<br/>risks: [警告訊息...]]
+    CalcNode --> AfterCalc["📦 Context + metrics<br/>metrics: {<br/>  total_pool,<br/>  per_head,<br/>  months<br/>}<br/>risks: [警告訊息...]"]
     
     AfterCalc --> AdvisorNode[🤖 AdvisorNode.execute]
     
