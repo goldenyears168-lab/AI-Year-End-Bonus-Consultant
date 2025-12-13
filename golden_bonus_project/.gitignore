@@ -1,0 +1,27 @@
+# 環境變數
+.env
+.streamlit/secrets.toml
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 測試
+test_*.py
+*.log
+
+# macOS
+.DS_Store
+

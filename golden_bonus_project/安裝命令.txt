@@ -1,0 +1,9 @@
+請在終端機執行以下命令（您已經在正確的目錄中）：
+
+1. 安裝依賴：
+python3 -m pip install --user streamlit google-generativeai python-dotenv
+
+2. 啟動應用：
+python3 -m streamlit run main.py
+
+完成！瀏覽器會自動打開。
