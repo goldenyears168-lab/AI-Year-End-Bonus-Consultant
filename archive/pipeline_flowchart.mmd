@@ -1,0 +1,209 @@
+%% GoldenBonus AI - Pipeline 流程圖 (Mermaid)
+%% 類似 n8n 工作流的視覺化流程圖
+
+%% ============================================
+%% 主要流程圖 (Main Pipeline)
+%% ============================================
+flowchart TD
+    Start([🚀 用戶點擊生成按鈕]) --> LoadConfig[⚙️ 讀取配置區<br/>config/settings.py<br/>FORM_FIELDS, QUICK_PRESETS]
+    
+    LoadConfig --> InitPipeline[🔧 Pipeline 初始化<br/>@st.cache_resource<br/>建立 Pipeline 實例]
+    
+    InitPipeline --> AddNodes[📝 註冊節點<br/>CalculatorNode<br/>AdvisorNode]
+    
+    AddNodes --> BuildContext[📦 建立初始 Context<br/>user_input:<br/>net_profit, employees,<br/>avg_salary, retention_rate, style<br/>current_intent: GENERATE_REPORT]
+    
+    BuildContext --> CalcNode[🔢 CalculatorNode<br/>計算獎金池、人均金額、月數<br/>風險檢查: 低於0.5個月警告]
+    
+    CalcNode --> CalcResult{計算成功?}
+    
+    CalcResult -->|是| AddMetrics[✅ 添加 metrics 到 Context<br/>total_pool, per_head, months<br/>risks: 警告訊息陣列]
+    CalcResult -->|否| Error[❌ 錯誤處理<br/>context.error = 錯誤訊息]
+    
+    AddMetrics --> LoadKnowledge[📚 讀取知識庫<br/>assets/knowledge.py<br/>BONUS_KB_TEXT]
+    
+    LoadKnowledge --> LoadTemplate[📋 讀取提示詞模板<br/>config/settings.py<br/>PROMPT_TEMPLATES]
+    
+    LoadTemplate --> BuildPrompt[🔨 組合 System Prompt<br/>知識庫 + 模板 + 數據<br/>格式化提示詞]
+    
+    BuildPrompt --> AdvisorNode[🤖 AdvisorNode<br/>準備 API 呼叫參數]
+    
+    AdvisorNode --> CallAI[🌐 呼叫 Gemini API<br/>utils/gemini_client.py<br/>call_gemini_logic]
+    
+    CallAI --> AIResponse{API 成功?}
+    
+    AIResponse -->|是| AddResponse[✅ 添加 ai_response 到 Context<br/>決策備忘錄<br/>system_prompt]
+    AIResponse -->|否| AIError[❌ AI 錯誤<br/>context.error = API錯誤]
+    
+    AddResponse --> SaveContext[💾 保存 Context<br/>st.session_state.pipeline_context]
+    
+    SaveContext --> Display[📊 顯示結果<br/>Metrics 儀表板<br/>決策備忘錄<br/>快捷問題按鈕]
+    
+    Error --> Display
+    AIError --> Display
+    
+    Display --> End([✅ 流程完成])
+    
+    %% 節點樣式
+    style Start fill:#f093fb,stroke:#f5576c,stroke-width:3px,color:#fff
+    style LoadConfig fill:#ffecd2,stroke:#fcb69f,stroke-width:2px,color:#2d3748
+    style LoadKnowledge fill:#a8edea,stroke:#fed6e3,stroke-width:2px,color:#2d3748
+    style LoadTemplate fill:#ffecd2,stroke:#fcb69f,stroke-width:2px,color:#2d3748
+    style CalcNode fill:#4facfe,stroke:#00f2fe,stroke-width:2px,color:#fff
+    style AdvisorNode fill:#30cfd0,stroke:#330867,stroke-width:2px,color:#fff
+    style CallAI fill:#fa709a,stroke:#fee140,stroke-width:2px,color:#2d3748
+    style Display fill:#a8edea,stroke:#fed6e3,stroke-width:2px,color:#2d3748
+    style End fill:#f093fb,stroke:#f5576c,stroke-width:3px,color:#fff
+    style Error fill:#fc8181,stroke:#f56565,stroke-width:2px,color:#fff
+    style AIError fill:#fc8181,stroke:#f56565,stroke-width:2px,color:#fff
+
+%% ============================================
+%% 聊天流程圖 (Chat Flow)
+%% ============================================
+flowchart TD
+    ChatStart([💬 用戶輸入問題]) --> CheckData{數據已變更?}
+    
+    CheckData -->|是| DataChanged[⚠️ 提示重新生成報告<br/>st.session_state.data_changed = True]
+    CheckData -->|否| CheckContext{Context 存在?}
+    
+    CheckContext -->|否| NoContext[⚠️ 提示先生成報告<br/>請點擊生成按鈕]
+    CheckContext -->|是| LoadChatContext[📦 載入已存在的 Context<br/>st.session_state.pipeline_context]
+    
+    LoadChatContext --> UpdateIntent[🔄 更新 Context<br/>current_intent: CHAT_FOLLOWUP<br/>latest_user_question: 用戶問題<br/>history: 對話歷史陣列]
+    
+    UpdateIntent --> LoadKnowledgeChat[📚 讀取知識庫<br/>assets/knowledge.py<br/>BONUS_KB_TEXT]
+    
+    LoadKnowledgeChat --> LoadChatTemplate[📋 讀取聊天模板<br/>PROMPT_TEMPLATES.chat_followup]
+    
+    LoadChatTemplate --> BuildChatPrompt[🔨 組合聊天 System Prompt<br/>知識庫 + 聊天模板 + 已計算數據]
+    
+    BuildChatPrompt --> CreateChatPipeline[🔧 建立聊天 Pipeline<br/>只包含 AdvisorNode]
+    
+    CreateChatPipeline --> CallAIChat[🌐 呼叫 Gemini API<br/>包含對話歷史<br/>history 參數]
+    
+    CallAIChat --> ChatResponse{API 成功?}
+    
+    ChatResponse -->|是| AddChatResponse[✅ 添加回應到 Context<br/>ai_response]
+    ChatResponse -->|否| ChatError[❌ 聊天錯誤]
+    
+    AddChatResponse --> SaveChatHistory[💾 保存對話歷史<br/>st.session_state.messages<br/>追加用戶問題和AI回應]
+    
+    SaveChatHistory --> DisplayChat[💬 顯示 AI 回應<br/>在聊天介面中]
+    
+    DataChanged --> DisplayChat
+    NoContext --> DisplayChat
+    ChatError --> DisplayChat
+    
+    DisplayChat --> ChatEnd([✅ 聊天完成])
+    
+    %% 節點樣式
+    style ChatStart fill:#f093fb,stroke:#f5576c,stroke-width:3px,color:#fff
+    style LoadKnowledgeChat fill:#a8edea,stroke:#fed6e3,stroke-width:2px,color:#2d3748
+    style LoadChatTemplate fill:#ffecd2,stroke:#fcb69f,stroke-width:2px,color:#2d3748
+    style CallAIChat fill:#fa709a,stroke:#fee140,stroke-width:2px,color:#2d3748
+    style DisplayChat fill:#a8edea,stroke:#fed6e3,stroke-width:2px,color:#2d3748
+    style ChatEnd fill:#f093fb,stroke:#f5576c,stroke-width:3px,color:#fff
+    style DataChanged fill:#fbbf24,stroke:#f59e0b,stroke-width:2px,color:#fff
+    style NoContext fill:#fbbf24,stroke:#f59e0b,stroke-width:2px,color:#fff
+    style ChatError fill:#fc8181,stroke:#f56565,stroke-width:2px,color:#fff
+
+%% ============================================
+%% 資源關係圖 (Resource Relationships)
+%% ============================================
+flowchart LR
+    subgraph Config["⚙️ 配置區 (config/settings.py)"]
+        FORM[FORM_FIELDS<br/>表單欄位定義]
+        TEMPLATE[PROMPT_TEMPLATES<br/>提示詞模板]
+        PRESET[QUICK_PRESETS<br/>快速預設]
+        QUICK[QUICK_QUESTIONS<br/>快捷問題]
+        BUTTON[BUTTON_LABELS<br/>按鈕文字]
+    end
+    
+    subgraph Knowledge["📚 知識庫 (assets/knowledge.py)"]
+        KB[BONUS_KB_TEXT<br/>年終獎金顧問知識庫<br/>反直覺洞察規則]
+    end
+    
+    subgraph Main["📥 main.py"]
+        UI[Streamlit UI<br/>側邊欄輸入]
+        Controller[流程控制器<br/>Pipeline 執行]
+        Display[結果顯示]
+    end
+    
+    subgraph Nodes["🔧 Pipeline Nodes"]
+        Calc[CalculatorNode<br/>計算 + 風險檢查]
+        Advisor[AdvisorNode<br/>AI 顧問]
+    end
+    
+    subgraph AI["🌐 AI 客戶端 (utils/gemini_client.py)"]
+        Client[call_gemini_logic<br/>統一 API 入口]
+        Gemini[Gemini 2.0 Flash API]
+    end
+    
+    FORM --> UI
+    PRESET --> UI
+    BUTTON --> UI
+    QUICK --> Display
+    
+    TEMPLATE --> Advisor
+    
+    KB --> Advisor
+    
+    UI --> Controller
+    Controller --> Calc
+    Calc --> Advisor
+    Advisor --> Client
+    Client --> Gemini
+    Gemini --> Client
+    Client --> Advisor
+    Advisor --> Display
+    
+    %% 節點樣式
+    style Config fill:#ffecd2,stroke:#fcb69f,stroke-width:2px,color:#2d3748
+    style Knowledge fill:#a8edea,stroke:#fed6e3,stroke-width:2px,color:#2d3748
+    style Main fill:#f093fb,stroke:#f5576c,stroke-width:2px,color:#fff
+    style Nodes fill:#4facfe,stroke:#00f2fe,stroke-width:2px,color:#fff
+    style AI fill:#fa709a,stroke:#fee140,stroke-width:2px,color:#2d3748
+
+%% ============================================
+%% Context 數據流圖 (Context Data Flow)
+%% ============================================
+flowchart TD
+    StartContext[📦 初始 Context<br/>user_input:<br/>net_profit, employees,<br/>avg_salary, retention_rate, style<br/>current_intent: GENERATE_REPORT]
+    
+    StartContext --> CalcNode[🔢 CalculatorNode.execute]
+    
+    CalcNode --> AfterCalc[📦 Context + metrics<br/>metrics: {<br/>  total_pool,<br/>  per_head,<br/>  months<br/>}<br/>risks: [警告訊息...]]
+    
+    AfterCalc --> AdvisorNode[🤖 AdvisorNode.execute]
+    
+    AdvisorNode --> BuildPrompt[🔨 組合 System Prompt<br/>知識庫 + 模板 + Context數據]
+    
+    BuildPrompt --> CallAPI[🌐 呼叫 Gemini API<br/>傳入 system_prompt, user_message]
+    
+    CallAPI --> AfterAPI[📦 Context + ai_response<br/>ai_response: 決策備忘錄<br/>system_prompt: 完整提示詞]
+    
+    AfterAPI --> SaveContext[💾 保存到 Session State<br/>st.session_state.pipeline_context]
+    
+    SaveContext --> ChatFlow{用戶發起聊天?}
+    
+    ChatFlow -->|是| ChatContext[📦 載入 Context<br/>添加 latest_user_question<br/>添加 history]
+    
+    ChatContext --> ChatAdvisor[🤖 AdvisorNode.execute<br/>CHAT_FOLLOWUP intent]
+    
+    ChatAdvisor --> ChatAPI[🌐 呼叫 Gemini API<br/>包含對話歷史]
+    
+    ChatAPI --> ChatResponse[📦 Context + ai_response<br/>聊天回應]
+    
+    ChatResponse --> SaveChat[💾 保存對話歷史<br/>st.session_state.messages]
+    
+    ChatFlow -->|否| EndContext([✅ Context 完成])
+    SaveChat --> EndContext
+    
+    %% 節點樣式
+    style StartContext fill:#f093fb,stroke:#f5576c,stroke-width:2px,color:#fff
+    style AfterCalc fill:#4facfe,stroke:#00f2fe,stroke-width:2px,color:#fff
+    style AfterAPI fill:#30cfd0,stroke:#330867,stroke-width:2px,color:#fff
+    style ChatContext fill:#fa709a,stroke:#fee140,stroke-width:2px,color:#2d3748
+    style ChatResponse fill:#fa709a,stroke:#fee140,stroke-width:2px,color:#2d3748
+    style EndContext fill:#a8edea,stroke:#fed6e3,stroke-width:2px,color:#2d3748
+

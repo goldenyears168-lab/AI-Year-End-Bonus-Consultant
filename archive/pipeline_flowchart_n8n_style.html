@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GoldenBonus AI - n8n 風格流程圖 (Mermaid)</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            text-align: center;
+            color: #2d3748;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #718096;
+            margin-bottom: 40px;
+            font-size: 1.1em;
+        }
+
+        .mermaid-container {
+            background: #f7fafc;
+            border-radius: 15px;
+            padding: 30px;
+            margin: 30px 0;
+            border: 2px solid #e2e8f0;
+            overflow-x: auto;
+        }
+
+        .section {
+            margin-top: 60px;
+            padding: 30px;
+            background: #f7fafc;
+            border-radius: 15px;
+            border: 2px solid #e2e8f0;
+        }
+
+        .section h2 {
+            color: #2d3748;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+
+        .section h3 {
+            color: #4a5568;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .code-block {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+
+        .legend {
+            margin-top: 40px;
+            padding: 30px;
+            background: #f0f9ff;
+            border-radius: 15px;
+            border-left: 5px solid #3b82f6;
+        }
+
+        .legend h3 {
+            color: #1e40af;
+            margin-bottom: 20px;
+        }
+
+        .legend-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .legend-color {
+            width: 30px;
+            height: 30px;
+            border-radius: 6px;
+            flex-shrink: 0;
+        }
+
+        .note-box {
+            margin-top: 30px;
+            padding: 20px;
+            background: #fff5f5;
+            border-radius: 10px;
+            border-left: 4px solid #fc8181;
+        }
+
+        .note-box h4 {
+            color: #c53030;
+            margin-bottom: 10px;
+        }
+
+        .note-box p {
+            color: #4a5568;
+            line-height: 1.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 GoldenBonus AI - n8n 風格流程圖</h1>
+        <p class="subtitle">使用 Mermaid 繪製的完整 Pipeline 流程（類似 n8n 工作流）</p>
+
+        <!-- 主要流程圖 -->
+        <div class="section">
+            <h2>📊 主要流程圖 (Main Pipeline)</h2>
+            <div class="mermaid-container">
+                <div class="mermaid">
+flowchart TD
+    Start([🚀 用戶點擊生成按鈕]) --> LoadConfig[⚙️ 讀取配置區<br/>config/settings.py<br/>FORM_FIELDS, QUICK_PRESETS]
+    
+    LoadConfig --> InitPipeline[🔧 Pipeline 初始化<br/>@st.cache_resource<br/>建立 Pipeline 實例]
+    
+    InitPipeline --> AddNodes[📝 註冊節點<br/>CalculatorNode<br/>AdvisorNode]
+    
+    AddNodes --> BuildContext[📦 建立初始 Context<br/>user_input:<br/>net_profit, employees,<br/>avg_salary, retention_rate, style<br/>current_intent: GENERATE_REPORT]
+    
+    BuildContext --> CalcNode[🔢 CalculatorNode<br/>計算獎金池、人均金額、月數<br/>風險檢查: 低於0.5個月警告]
+    
+    CalcNode --> CalcResult{計算成功?}
+    
+    CalcResult -->|是| AddMetrics[✅ 添加 metrics 到 Context<br/>total_pool, per_head, months<br/>risks: 警告訊息陣列]
+    CalcResult -->|否| Error[❌ 錯誤處理<br/>context.error = 錯誤訊息]
+    
+    AddMetrics --> LoadKnowledge[📚 讀取知識庫<br/>assets/knowledge.py<br/>BONUS_KB_TEXT]
+    
+    LoadKnowledge --> LoadTemplate[📋 讀取提示詞模板<br/>config/settings.py<br/>PROMPT_TEMPLATES]
+    
+    LoadTemplate --> BuildPrompt[🔨 組合 System Prompt<br/>知識庫 + 模板 + 數據<br/>格式化提示詞]
+    
+    BuildPrompt --> AdvisorNode[🤖 AdvisorNode<br/>準備 API 呼叫參數]
+    
+    AdvisorNode --> CallAI[🌐 呼叫 Gemini API<br/>utils/gemini_client.py<br/>call_gemini_logic]
+    
+    CallAI --> AIResponse{API 成功?}
+    
+    AIResponse -->|是| AddResponse[✅ 添加 ai_response 到 Context<br/>決策備忘錄<br/>system_prompt]
+    AIResponse -->|否| AIError[❌ AI 錯誤<br/>context.error = API錯誤]
+    
+    AddResponse --> SaveContext[💾 保存 Context<br/>st.session_state.pipeline_context]
+    
+    SaveContext --> Display[📊 顯示結果<br/>Metrics 儀表板<br/>決策備忘錄<br/>快捷問題按鈕]
+    
+    Error --> Display
+    AIError --> Display
+    
+    Display --> End([✅ 流程完成])
+    
+    style Start fill:#f093fb,stroke:#f5576c,stroke-width:3px,color:#fff
+    style LoadConfig fill:#ffecd2,stroke:#fcb69f,stroke-width:2px,color:#2d3748
+    style LoadKnowledge fill:#a8edea,stroke:#fed6e3,stroke-width:2px,color:#2d3748
+    style LoadTemplate fill:#ffecd2,stroke:#fcb69f,stroke-width:2px,color:#2d3748
+    style CalcNode fill:#4facfe,stroke:#00f2fe,stroke-width:2px,color:#fff
+    style AdvisorNode fill:#30cfd0,stroke:#330867,stroke-width:2px,color:#fff
+    style CallAI fill:#fa709a,stroke:#fee140,stroke-width:2px,color:#2d3748
+    style Display fill:#a8edea,stroke:#fed6e3,stroke-width:2px,color:#2d3748
+    style End fill:#f093fb,stroke:#f5576c,stroke-width:3px,color:#fff
+    style Error fill:#fc8181,stroke:#f56565,stroke-width:2px,color:#fff
+    style AIError fill:#fc8181,stroke:#f56565,stroke-width:2px,color:#fff
+                </div>
+            </div>
+        </div>
+
+        <!-- 聊天流程圖 -->
+        <div class="section">
+            <h2>💬 聊天流程圖 (Chat Flow)</h2>
+            <div class="mermaid-container">
+                <div class="mermaid">
+flowchart TD
+    ChatStart([💬 用戶輸入問題]) --> CheckData{數據已變更?}
+    
+    CheckData -->|是| DataChanged[⚠️ 提示重新生成報告<br/>st.session_state.data_changed = True]
+    CheckData -->|否| CheckContext{Context 存在?}
+    
+    CheckContext -->|否| NoContext[⚠️ 提示先生成報告<br/>請點擊生成按鈕]
+    CheckContext -->|是| LoadChatContext[📦 載入已存在的 Context<br/>st.session_state.pipeline_context]
+    
+    LoadChatContext --> UpdateIntent[🔄 更新 Context<br/>current_intent: CHAT_FOLLOWUP<br/>latest_user_question: 用戶問題<br/>history: 對話歷史陣列]
+    
+    UpdateIntent --> LoadKnowledgeChat[📚 讀取知識庫<br/>assets/knowledge.py<br/>BONUS_KB_TEXT]
+    
+    LoadKnowledgeChat --> LoadChatTemplate[📋 讀取聊天模板<br/>PROMPT_TEMPLATES.chat_followup]
+    
+    LoadChatTemplate --> BuildChatPrompt[🔨 組合聊天 System Prompt<br/>知識庫 + 聊天模板 + 已計算數據]
+    
+    BuildChatPrompt --> CreateChatPipeline[🔧 建立聊天 Pipeline<br/>只包含 AdvisorNode]
+    
+    CreateChatPipeline --> CallAIChat[🌐 呼叫 Gemini API<br/>包含對話歷史<br/>history 參數]
+    
+    CallAIChat --> ChatResponse{API 成功?}
+    
+    ChatResponse -->|是| AddChatResponse[✅ 添加回應到 Context<br/>ai_response]
+    ChatResponse -->|否| ChatError[❌ 聊天錯誤]
+    
+    AddChatResponse --> SaveChatHistory[💾 保存對話歷史<br/>st.session_state.messages<br/>追加用戶問題和AI回應]
+    
+    SaveChatHistory --> DisplayChat[💬 顯示 AI 回應<br/>在聊天介面中]
+    
+    DataChanged --> DisplayChat
+    NoContext --> DisplayChat
+    ChatError --> DisplayChat
+    
+    DisplayChat --> ChatEnd([✅ 聊天完成])
+    
+    style ChatStart fill:#f093fb,stroke:#f5576c,stroke-width:3px,color:#fff
+    style LoadKnowledgeChat fill:#a8edea,stroke:#fed6e3,stroke-width:2px,color:#2d3748
+    style LoadChatTemplate fill:#ffecd2,stroke:#fcb69f,stroke-width:2px,color:#2d3748
+    style CallAIChat fill:#fa709a,stroke:#fee140,stroke-width:2px,color:#2d3748
+    style DisplayChat fill:#a8edea,stroke:#fed6e3,stroke-width:2px,color:#2d3748
+    style ChatEnd fill:#f093fb,stroke:#f5576c,stroke-width:3px,color:#fff
+    style DataChanged fill:#fbbf24,stroke:#f59e0b,stroke-width:2px,color:#fff
+    style NoContext fill:#fbbf24,stroke:#f59e0b,stroke-width:2px,color:#fff
+    style ChatError fill:#fc8181,stroke:#f56565,stroke-width:2px,color:#fff
+                </div>
+            </div>
+        </div>
+
+        <!-- 資源關係圖 -->
+        <div class="section">
+            <h2>🔗 資源關係圖 (Resource Relationships)</h2>
+            <div class="mermaid-container">
+                <div class="mermaid">
+flowchart LR
+    subgraph Config["⚙️ 配置區 (config/settings.py)"]
+        FORM[FORM_FIELDS<br/>表單欄位定義]
+        TEMPLATE[PROMPT_TEMPLATES<br/>提示詞模板]
+        PRESET[QUICK_PRESETS<br/>快速預設]
+        QUICK[QUICK_QUESTIONS<br/>快捷問題]
+        BUTTON[BUTTON_LABELS<br/>按鈕文字]
+    end
+    
+    subgraph Knowledge["📚 知識庫 (assets/knowledge.py)"]
+        KB[BONUS_KB_TEXT<br/>年終獎金顧問知識庫<br/>反直覺洞察規則]
+    end
+    
+    subgraph Main["📥 main.py"]
+        UI[Streamlit UI<br/>側邊欄輸入]
+        Controller[流程控制器<br/>Pipeline 執行]
+        Display[結果顯示]
+    end
+    
+    subgraph Nodes["🔧 Pipeline Nodes"]
+        Calc[CalculatorNode<br/>計算 + 風險檢查]
+        Advisor[AdvisorNode<br/>AI 顧問]
+    end
+    
+    subgraph AI["🌐 AI 客戶端 (utils/gemini_client.py)"]
+        Client[call_gemini_logic<br/>統一 API 入口]
+        Gemini[Gemini 2.0 Flash API]
+    end
+    
+    FORM --> UI
+    PRESET --> UI
+    BUTTON --> UI
+    QUICK --> Display
+    
+    TEMPLATE --> Advisor
+    
+    KB --> Advisor
+    
+    UI --> Controller
+    Controller --> Calc
+    Calc --> Advisor
+    Advisor --> Client
+    Client --> Gemini
+    Gemini --> Client
+    Client --> Advisor
+    Advisor --> Display
+    
+    style Config fill:#ffecd2,stroke:#fcb69f,stroke-width:2px,color:#2d3748
+    style Knowledge fill:#a8edea,stroke:#fed6e3,stroke-width:2px,color:#2d3748
+    style Main fill:#f093fb,stroke:#f5576c,stroke-width:2px,color:#fff
+    style Nodes fill:#4facfe,stroke:#00f2fe,stroke-width:2px,color:#fff
+    style AI fill:#fa709a,stroke:#fee140,stroke-width:2px,color:#2d3748
+                </div>
+            </div>
+        </div>
+
+        <!-- Context 數據流圖 -->
+        <div class="section">
+            <h2>🔄 Context 數據流圖 (Context Data Flow)</h2>
+            <div class="mermaid-container">
+                <div class="mermaid">
+flowchart TD
+    StartContext[📦 初始 Context<br/>user_input:<br/>net_profit, employees,<br/>avg_salary, retention_rate, style<br/>current_intent: GENERATE_REPORT]
+    
+    StartContext --> CalcNode[🔢 CalculatorNode.execute]
+    
+    CalcNode --> AfterCalc[📦 Context + metrics<br/>metrics: {<br/>  total_pool,<br/>  per_head,<br/>  months<br/>}<br/>risks: [警告訊息...]]
+    
+    AfterCalc --> AdvisorNode[🤖 AdvisorNode.execute]
+    
+    AdvisorNode --> BuildPrompt[🔨 組合 System Prompt<br/>知識庫 + 模板 + Context數據]
+    
+    BuildPrompt --> CallAPI[🌐 呼叫 Gemini API<br/>傳入 system_prompt, user_message]
+    
+    CallAPI --> AfterAPI[📦 Context + ai_response<br/>ai_response: 決策備忘錄<br/>system_prompt: 完整提示詞]
+    
+    AfterAPI --> SaveContext[💾 保存到 Session State<br/>st.session_state.pipeline_context]
+    
+    SaveContext --> ChatFlow{用戶發起聊天?}
+    
+    ChatFlow -->|是| ChatContext[📦 載入 Context<br/>添加 latest_user_question<br/>添加 history]
+    
+    ChatContext --> ChatAdvisor[🤖 AdvisorNode.execute<br/>CHAT_FOLLOWUP intent]
+    
+    ChatAdvisor --> ChatAPI[🌐 呼叫 Gemini API<br/>包含對話歷史]
+    
+    ChatAPI --> ChatResponse[📦 Context + ai_response<br/>聊天回應]
+    
+    ChatResponse --> SaveChat[💾 保存對話歷史<br/>st.session_state.messages]
+    
+    ChatFlow -->|否| EndContext([✅ Context 完成])
+    SaveChat --> EndContext
+    
+    style StartContext fill:#f093fb,stroke:#f5576c,stroke-width:2px,color:#fff
+    style AfterCalc fill:#4facfe,stroke:#00f2fe,stroke-width:2px,color:#fff
+    style AfterAPI fill:#30cfd0,stroke:#330867,stroke-width:2px,color:#fff
+    style ChatContext fill:#fa709a,stroke:#fee140,stroke-width:2px,color:#2d3748
+    style ChatResponse fill:#fa709a,stroke:#fee140,stroke-width:2px,color:#2d3748
+    style EndContext fill:#a8edea,stroke:#fed6e3,stroke-width:2px,color:#2d3748
+                </div>
+            </div>
+        </div>
+
+        <!-- 圖例說明 -->
+        <div class="legend">
+            <h3>📋 節點類型說明</h3>
+            <div class="legend-grid">
+                <div class="legend-item">
+                    <div class="legend-color" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);"></div>
+                    <div><strong>觸發節點</strong><br/>流程的開始或結束</div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);"></div>
+                    <div><strong>配置節點</strong><br/>讀取配置區資源</div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);"></div>
+                    <div><strong>知識庫節點</strong><br/>讀取知識庫資源</div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);"></div>
+                    <div><strong>計算節點</strong><br/>CalculatorNode</div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);"></div>
+                    <div><strong>AI 顧問節點</strong><br/>AdvisorNode</div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);"></div>
+                    <div><strong>AI API 節點</strong><br/>Gemini API 呼叫</div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #fc8181;"></div>
+                    <div><strong>錯誤節點</strong><br/>錯誤處理</div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #fbbf24;"></div>
+                    <div><strong>警告節點</strong><br/>條件檢查警告</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mermaid 代碼 -->
+        <div class="section">
+            <h2>📝 Mermaid 原始碼</h2>
+            <h3>主要流程圖代碼</h3>
+            <div class="code-block" id="main-flow-code"></div>
+            
+            <h3>聊天流程圖代碼</h3>
+            <div class="code-block" id="chat-flow-code"></div>
+            
+            <h3>資源關係圖代碼</h3>
+            <div class="code-block" id="resource-code"></div>
+            
+            <h3>Context 數據流圖代碼</h3>
+            <div class="code-block" id="context-code"></div>
+        </div>
+
+        <!-- 使用說明 -->
+        <div class="note-box">
+            <h4>💡 使用說明</h4>
+            <p>
+                <strong>如何查看流程圖：</strong><br>
+                1. 此頁面使用 Mermaid.js 渲染流程圖，類似 n8n 的工作流視覺化<br>
+                2. 流程圖可以互動：點擊節點可以查看詳細信息<br>
+                3. 如果流程圖顯示不正常，請確保網路連線正常（需要載入 Mermaid.js CDN）<br><br>
+                
+                <strong>流程圖特點：</strong><br>
+                • 使用不同顏色區分節點類型（觸發、配置、計算、AI等）<br>
+                • 展示完整的數據流和錯誤處理路徑<br>
+                • 包含條件分支和並行流程<br>
+                • 清晰展示配置區、知識庫、AI 客戶端的關係<br><br>
+                
+                <strong>在 n8n 中的對應：</strong><br>
+                • 觸發節點 = n8n 的 Webhook/Manual Trigger<br>
+                • 配置節點 = n8n 的 Set 或 Function 節點<br>
+                • 計算節點 = n8n 的 Code 或 Function 節點<br>
+                • AI 節點 = n8n 的 HTTP Request 節點（呼叫外部 API）<br>
+                • 條件節點 = n8n 的 IF 節點<br>
+                • 錯誤處理 = n8n 的 Error Trigger 或 On Error 節點
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // 初始化 Mermaid
+        mermaid.initialize({ 
+            startOnLoad: true,
+            theme: 'default',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis'
+            }
+        });
+
+        // 保存 Mermaid 代碼供參考
+        const mainFlowCode = `flowchart TD
+    Start([🚀 用戶點擊生成按鈕]) --> LoadConfig[⚙️ 讀取配置區]
+    LoadConfig --> InitPipeline[🔧 Pipeline 初始化]
+    InitPipeline --> AddNodes[📝 註冊節點]
+    AddNodes --> BuildContext[📦 建立初始 Context]
+    BuildContext --> CalcNode[🔢 CalculatorNode]
+    CalcNode --> CalcResult{計算成功?}
+    CalcResult -->|是| AddMetrics[✅ 添加 metrics]
+    CalcResult -->|否| Error[❌ 錯誤處理]
+    AddMetrics --> LoadKnowledge[📚 讀取知識庫]
+    LoadKnowledge --> LoadTemplate[📋 讀取提示詞模板]
+    LoadTemplate --> BuildPrompt[🔨 組合 System Prompt]
+    BuildPrompt --> AdvisorNode[🤖 AdvisorNode]
+    AdvisorNode --> CallAI[🌐 呼叫 Gemini API]
+    CallAI --> AIResponse{API 成功?}
+    AIResponse -->|是| AddResponse[✅ 添加 ai_response]
+    AIResponse -->|否| AIError[❌ AI 錯誤]
+    AddResponse --> SaveContext[💾 保存 Context]
+    SaveContext --> Display[📊 顯示結果]
+    Error --> Display
+    AIError --> Display
+    Display --> End([✅ 流程完成])`;
+
+        const chatFlowCode = `flowchart TD
+    ChatStart([💬 用戶輸入問題]) --> CheckData{數據已變更?}
+    CheckData -->|是| DataChanged[⚠️ 提示重新生成]
+    CheckData -->|否| CheckContext{Context 存在?}
+    CheckContext -->|否| NoContext[⚠️ 提示先生成報告]
+    CheckContext -->|是| LoadChatContext[📦 載入 Context]
+    LoadChatContext --> UpdateIntent[🔄 更新 Context]
+    UpdateIntent --> LoadKnowledgeChat[📚 讀取知識庫]
+    LoadKnowledgeChat --> LoadChatTemplate[📋 讀取聊天模板]
+    LoadChatTemplate --> BuildChatPrompt[🔨 組合聊天 Prompt]
+    BuildChatPrompt --> CreateChatPipeline[🔧 建立聊天 Pipeline]
+    CreateChatPipeline --> CallAIChat[🌐 呼叫 Gemini API]
+    CallAIChat --> ChatResponse{API 成功?}
+    ChatResponse -->|是| AddChatResponse[✅ 添加回應]
+    ChatResponse -->|否| ChatError[❌ 聊天錯誤]
+    AddChatResponse --> SaveChatHistory[💾 保存對話歷史]
+    SaveChatHistory --> DisplayChat[💬 顯示 AI 回應]
+    DisplayChat --> ChatEnd([✅ 聊天完成])`;
+
+        const resourceCode = `flowchart LR
+    subgraph Config["⚙️ 配置區"]
+        FORM[FORM_FIELDS]
+        TEMPLATE[PROMPT_TEMPLATES]
+        PRESET[QUICK_PRESETS]
+    end
+    subgraph Knowledge["📚 知識庫"]
+        KB[BONUS_KB_TEXT]
+    end
+    subgraph Main["📥 main.py"]
+        UI[Streamlit UI]
+        Controller[流程控制器]
+    end
+    subgraph Nodes["🔧 Pipeline Nodes"]
+        Calc[CalculatorNode]
+        Advisor[AdvisorNode]
+    end
+    subgraph AI["🌐 AI 客戶端"]
+        Client[call_gemini_logic]
+        Gemini[Gemini API]
+    end
+    FORM --> UI
+    TEMPLATE --> Advisor
+    KB --> Advisor
+    UI --> Controller
+    Controller --> Calc
+    Calc --> Advisor
+    Advisor --> Client
+    Client --> Gemini`;
+
+        const contextCode = `flowchart TD
+    StartContext[📦 初始 Context] --> CalcNode[🔢 CalculatorNode]
+    CalcNode --> AfterCalc[📦 Context + metrics]
+    AfterCalc --> AdvisorNode[🤖 AdvisorNode]
+    AdvisorNode --> AfterAPI[📦 Context + ai_response]
+    AfterAPI --> SaveContext[💾 保存到 Session State]
+    SaveContext --> ChatFlow{用戶發起聊天?}
+    ChatFlow -->|是| ChatContext[📦 載入 Context]
+    ChatContext --> ChatAdvisor[🤖 AdvisorNode]
+    ChatAdvisor --> ChatResponse[📦 Context + ai_response]
+    ChatResponse --> SaveChat[💾 保存對話歷史]`;
+
+        // 顯示代碼
+        document.getElementById('main-flow-code').textContent = mainFlowCode;
+        document.getElementById('chat-flow-code').textContent = chatFlowCode;
+        document.getElementById('resource-code').textContent = resourceCode;
+        document.getElementById('context-code').textContent = contextCode;
+    </script>
+</body>
+</html>
+
