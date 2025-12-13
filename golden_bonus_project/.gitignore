@@ -8,6 +8,8 @@
 *api*key*
 # 防止意外提交包含 API key 的文件
 *故障排除.md
+*更新完成.md
+*API_Key*.md
 
 # Python
 __pycache__/
