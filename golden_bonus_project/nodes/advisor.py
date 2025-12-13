@@ -15,7 +15,6 @@ class AdvisorNode(BaseNode):
             # 使用配置中心的提示詞模板
             system_prompt = PROMPT_TEMPLATES["generate_report"].format(
                 knowledge_base=BONUS_KB_TEXT,
-                revenue=user_data.get('revenue', 'N/A'),
                 net_profit=user_data.get('net_profit', 'N/A'),
                 style=user_data.get('style', 'N/A'),
                 total_pool=metrics.get('total_pool', 'N/A'),
@@ -29,7 +28,6 @@ class AdvisorNode(BaseNode):
             # 使用配置中心的聊天提示詞模板
             system_prompt = PROMPT_TEMPLATES["chat_followup"].format(
                 knowledge_base=BONUS_KB_TEXT,
-                revenue=user_data.get('revenue', 'N/A'),
                 net_profit=user_data.get('net_profit', 'N/A'),
                 employees=user_data.get('employees', 'N/A'),
                 avg_salary=user_data.get('avg_salary', 'N/A'),

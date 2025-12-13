@@ -15,15 +15,34 @@
 KNOWLEDGE_BASE_PATH = "assets.knowledge"
 KNOWLEDGE_VARIABLE_NAME = "BONUS_KB_TEXT"  # 知識庫變數名稱
 
+# ==================== 快速预设配置 ====================
+# 为常见场景提供快速选择
+QUICK_PRESETS = {
+    "startup": {
+        "label": "🚀 新創公司",
+        "description": "成長期：保留較少盈餘，激勵戰功",
+        "retention": 50,
+        "style": "戰功優先 (Performance First)"
+    },
+    "stable": {
+        "label": "🏢 穩定型企業",
+        "description": "成熟期：穩健保留，重點留才",
+        "retention": 75,
+        "style": "留才優先 (Retention First)"
+    },
+    "crisis": {
+        "label": "⚠️ 危機模式",
+        "description": "困難期：高保留，團隊優先",
+        "retention": 90,
+        "style": "團隊優先 (Team First)"
+    }
+}
+
 # ==================== 表單欄位定義 ====================
 # 所有 Sidebar 的輸入欄位定義集中管理
 FORM_FIELDS = {
-    "revenue": {
-        "label": "年度總營收 (萬元)",
-        "default": 1000,
-        "step": 10,
-        "help": None
-    },
+    # 注意：已移除 "revenue" 字段，因為計算邏輯不依賴營收數據
+    # 如需在 AI 分析中提供營收上下文，可在未來版本中作為可選字段添加
     "net_profit": {
         "label": "稅前淨利 (萬元)",
         "default": 100,
@@ -93,7 +112,7 @@ PROMPT_TEMPLATES = {
 你是一位年薪千萬的麥肯錫顧問，專門協助 CEO 制定年終獎金策略。
 
 【知識庫】：{knowledge_base}
-【企業數據】：營收 {revenue} 萬，淨利 {net_profit} 萬，風格 {style}
+【企業數據】：淨利 {net_profit} 萬，風格 {style}
 【計算結果】：總獎金池 {total_pool} 元，人均 {per_head} 元，平均 {months} 個月
 【風險提示】：{risks}
 
@@ -121,7 +140,6 @@ PROMPT_TEMPLATES = {
 
 【知識庫】：{knowledge_base}
 【當前企業數據】：
-- 營收：{revenue} 萬
 - 淨利：{net_profit} 萬
 - 員工數：{employees} 人
 - 平均月薪：{avg_salary} 元
@@ -146,6 +164,6 @@ BUTTON_LABELS = {
 }
 
 # 頁面標題
-PAGE_TITLE = "GoldenBonus AI"
-PAGE_HEADER = "🤖 GoldenBonus 年終獎金顧問"
+PAGE_TITLE = "WinLeaders-Bonus AI"
+PAGE_HEADER = "🤖 WinLeaders-Bonus 年終獎金顧問"
 

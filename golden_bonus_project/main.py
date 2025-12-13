@@ -11,7 +11,8 @@ from config.settings import (
     BUTTON_LABELS, 
     PAGE_TITLE, 
     PAGE_HEADER,
-    STYLE_DESCRIPTIONS
+    STYLE_DESCRIPTIONS,
+    QUICK_PRESETS
 )
 
 # 1. 頁面設定（從配置中心讀取）
@@ -25,6 +26,8 @@ if "messages" not in st.session_state:
     st.session_state.messages = []          # 用來存對話歷史
 if "data_changed" not in st.session_state:
     st.session_state.data_changed = False   # 追蹤數據是否變動
+if "selected_preset" not in st.session_state:
+    st.session_state.selected_preset = None  # 追蹤選擇的快速预设
 
 # 定義一個回調函數，當數據改變時清空緩存
 def reset_on_change():
@@ -52,25 +55,71 @@ pipeline = get_pipeline()
 with st.sidebar:
     st.title("🎯 CEO 決策槓桿")
     
+    # 快速预设功能
+    st.subheader("⚡ 快速预设")
+    preset_cols = st.columns(3)
+    
+    for idx, (preset_key, preset_data) in enumerate(QUICK_PRESETS.items()):
+        with preset_cols[idx]:
+            # 高亮显示当前选择的预设
+            button_type = "primary" if st.session_state.selected_preset == preset_key else "secondary"
+            if st.button(preset_data["label"], use_container_width=True, key=f"preset_{preset_key}", type=button_type):
+                st.session_state.selected_preset = preset_key
+                reset_on_change()
+                st.rerun()
+    
+    if st.session_state.selected_preset:
+        preset_data = QUICK_PRESETS[st.session_state.selected_preset]
+        st.info(f"✅ 已套用：{preset_data['label']} - {preset_data['description']}")
+    
+    st.markdown("---")
+    
     # 槓桿 1：生存槓桿
     st.subheader("🛡️ 生存槓桿 (Safety Margin)")
+    
+    # 如果选择了预设，使用预设值，否则使用默认值
+    initial_retention = QUICK_PRESETS[st.session_state.selected_preset]["retention"] if st.session_state.selected_preset else FORM_FIELDS["retention"]["default"]
+    
+    # 定义回调函数：手动调整时清除预设选择
+    def clear_preset_on_change():
+        reset_on_change()
+        if st.session_state.selected_preset:
+            st.session_state.selected_preset = None
+    
     retention = st.slider(
         FORM_FIELDS["retention"]["label"],
         min_value=FORM_FIELDS["retention"]["min_value"],
         max_value=FORM_FIELDS["retention"]["max_value"],
-        value=FORM_FIELDS["retention"]["default"],
+        value=initial_retention,
         help=FORM_FIELDS["retention"]["help"],
-        on_change=reset_on_change
+        on_change=clear_preset_on_change
     )
+    
+    # 增强反馈：风险等级指示
+    if retention >= 85:
+        st.warning("⚠️ **高保留模式**：保留 85% 以上可能反映對未來的不安全感，建議釋放部分作為試錯基金。")
+    elif retention >= 70:
+        st.success("✅ **穩健型**：保留比例適中，平衡風險與激勵。")
+    elif retention >= 50:
+        st.info("💡 **成長型**：保留比例較低，更多資源回饋團隊，適合快速擴張期。")
+    else:
+        st.warning("⚠️ **激進型**：保留比例低於 50%，請確保公司現金流充足。")
     
     st.markdown("---")
     
     # 槓桿 2：激勵槓桿
     st.subheader("🚀 激勵槓桿 (Motivation Strategy)")
+    
+    # 如果选择了预设，使用预设值，否则使用默认值
+    initial_style = QUICK_PRESETS[st.session_state.selected_preset]["style"] if st.session_state.selected_preset else FORM_FIELDS["style"]["options"][0]
+    style_index = FORM_FIELDS["style"]["options"].index(initial_style) if initial_style in FORM_FIELDS["style"]["options"] else 0
+    
     style = st.radio(
         FORM_FIELDS["style"]["label"],
         options=FORM_FIELDS["style"]["options"],
-        help=FORM_FIELDS["style"]["help"]
+        index=style_index,
+        help=FORM_FIELDS["style"]["help"],
+        on_change=clear_preset_on_change
     )
     # 顯示策略說明（從配置中心讀取）
     st.caption(STYLE_DESCRIPTIONS[style])
@@ -81,12 +130,6 @@ with st.sidebar:
     st.subheader("💰 現實槓桿 (Financial Reality)")
     st.caption("請輸入公司的財務底氣")
     
-    revenue = st.number_input(
-        FORM_FIELDS["revenue"]["label"],
-        value=FORM_FIELDS["revenue"]["default"],
-        step=FORM_FIELDS["revenue"]["step"],
-        on_change=reset_on_change
-    )
     net_profit = st.number_input(
         FORM_FIELDS["net_profit"]["label"],
         value=FORM_FIELDS["net_profit"]["default"],
@@ -114,7 +157,14 @@ with st.sidebar:
     if monthly_burn > 0:
         retained_amount = (net_profit * 10000) * (retention / 100.0)
         survival_months = retained_amount / monthly_burn
-        st.caption(f"💡 靜態估算：約可支撐 {survival_months:.1f} 個月（精確分析請點擊「生成草案」）")
+        
+        # 增强反馈：根据存活月数显示不同颜色
+        if survival_months >= 6:
+            st.success(f"✅ **財務健康**：約可支撐 {survival_months:.1f} 個月（建議至少 6 個月）")
+        elif survival_months >= 3:
+            st.info(f"💡 **財務穩健**：約可支撐 {survival_months:.1f} 個月（精確分析請點擊「生成草案」）")
+        else:
+            st.warning(f"⚠️ **財務警告**：僅可支撐 {survival_months:.1f} 個月，低於建議的 6 個月安全線")
     
     start_btn = st.button(BUTTON_LABELS["generate"], type="primary", use_container_width=True)
 
@@ -123,7 +173,7 @@ if start_btn:
     # 準備初始數據包
     initial_context = {
         "user_input": {
-            "revenue": revenue,
+            # 已移除 revenue 字段，計算邏輯不依賴營收數據
             "net_profit": net_profit,
             "employees": employees,
             "avg_salary": avg_salary,
