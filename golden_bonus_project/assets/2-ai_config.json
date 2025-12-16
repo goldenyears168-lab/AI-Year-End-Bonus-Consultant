@@ -1,0 +1,172 @@
+{
+  "_file_description": "AI 設定檔：年終獎金顧問工具的意圖識別與實體提取設定。",
+  "version": "1.0.0",
+  "last_updated": "2025-12-15",
+  "_section_intents": "意圖設定：定義用戶訊息的意圖分類規則",
+  "intents": [
+    {
+      "_comment": "階段查詢意圖：用戶詢問企業發展階段相關問題",
+      "id": "stage_inquiry",
+      "keywords": ["階段", "發展階段", "企業階段", "生存期", "組織期", "擴展期", "規模期", "在哪個階段", "屬於哪個階段"],
+      "_field_description": {
+        "keywords": "匹配關鍵詞列表：如果用戶消息包含這些詞，會匹配此意圖"
+      }
+    },
+    {
+      "_comment": "HR Ratio 查詢意圖：用戶詢問人事成本比例、HR Ratio 相關問題",
+      "id": "hr_ratio_inquiry",
+      "keywords": ["HR Ratio", "人事成本", "人事比例", "成本比例", "人力成本", "人事成本風險", "成本是否過高"],
+      "_field_description": {
+        "keywords": "匹配關鍵詞列表"
+      }
+    },
+    {
+      "_comment": "獎金池查詢意圖：用戶詢問年終獎金池計算、金額等",
+      "id": "bonus_pool_inquiry",
+      "keywords": ["獎金池", "年終獎金", "獎金總額", "可以發多少", "獎金預算", "獎金金額"],
+      "_field_description": {
+        "keywords": "匹配關鍵詞列表"
+      }
+    },
+    {
+      "_comment": "分配查詢意圖：用戶詢問部門獎金分配、如何分配等",
+      "id": "allocation_inquiry",
+      "keywords": ["分配", "怎麼分配", "部門獎金", "各部門獎金", "分配比例", "誰該拿多少"],
+      "_field_description": {
+        "keywords": "匹配關鍵詞列表"
+      }
+    },
+    {
+      "_comment": "增長引擎查詢意圖：用戶詢問增長引擎、部門權重等",
+      "id": "engine_inquiry",
+      "keywords": ["增長引擎", "成長引擎", "銷售驅動", "營運驅動", "部門權重", "優先順序"],
+      "_field_description": {
+        "keywords": "匹配關鍵詞列表"
+      }
+    },
+    {
+      "_comment": "計算邏輯查詢意圖：用戶詢問計算方式、公式、邏輯等",
+      "id": "calculation_inquiry",
+      "keywords": ["怎麼算", "計算方式", "公式", "邏輯", "如何計算", "計算原理"],
+      "_field_description": {
+        "keywords": "匹配關鍵詞列表"
+      }
+    },
+    {
+      "_comment": "風險警示查詢意圖：用戶詢問風險、警告、超支等問題",
+      "id": "risk_inquiry",
+      "keywords": ["風險", "警告", "超支", "過高", "異常", "危險", "問題"],
+      "_field_description": {
+        "keywords": "匹配關鍵詞列表"
+      }
+    },
+    {
+      "_comment": "一般資訊查詢意圖：用戶詢問工具使用、功能說明等",
+      "id": "information_inquiry",
+      "keywords": ["是什麼", "有哪些", "功能", "如何使用", "怎麼用", "說明", "介紹"],
+      "_field_description": {
+        "keywords": "匹配關鍵詞列表"
+      }
+    }
+  ],
+  "_section_entity_patterns": "實體提取設定：定義需要從用戶訊息中提取的關鍵資訊",
+  "entity_patterns": {
+    "_comment": "部門類型實體：識別用戶提到的部門類型",
+    "department_type": [
+      {
+        "id": "hr",
+        "keywords": ["人事", "人資", "HR", "人力資源"]
+      },
+      {
+        "id": "sales",
+        "keywords": ["業務", "銷售", "業務部", "業務銷售"]
+      },
+      {
+        "id": "assets_finance",
+        "keywords": ["財務", "資產財務", "會計", "財務部"]
+      },
+      {
+        "id": "product_service",
+        "keywords": ["產品", "服務", "產品服務", "營運", "交付"]
+      },
+      {
+        "id": "rd_qa",
+        "keywords": ["研發", "品管", "RD", "QA", "研發品管"]
+      },
+      {
+        "id": "pr_marketing",
+        "keywords": ["行銷", "公關", "公關行銷", "市場", "品牌"]
+      },
+      {
+        "id": "management",
+        "keywords": ["管理", "管理層", "主管", "老闆"]
+      }
+    ],
+    "_comment": "企業階段實體：識別用戶提到的企業發展階段",
+    "enterprise_stage": [
+      {
+        "id": "survival",
+        "keywords": ["生存期", "生存階段", "保命階段"]
+      },
+      {
+        "id": "organization",
+        "keywords": ["組織期", "組織階段"]
+      },
+      {
+        "id": "expansion",
+        "keywords": ["擴展期", "擴展階段", "擴張期"]
+      },
+      {
+        "id": "scale",
+        "keywords": ["規模期", "規模階段"]
+      }
+    ],
+    "_comment": "增長引擎實體：識別用戶提到的增長引擎類型",
+    "growth_engine": [
+      {
+        "id": "sales_led",
+        "keywords": ["銷售驅動", "業務驅動"]
+      },
+      {
+        "id": "ops_led",
+        "keywords": ["營運驅動"]
+      },
+      {
+        "id": "media_led",
+        "keywords": ["媒體驅動", "內容驅動", "品牌驅動"]
+      },
+      {
+        "id": "channel_led",
+        "keywords": ["通路驅動"]
+      },
+      {
+        "id": "founder_led",
+        "keywords": ["創辦人驅動"]
+      },
+      {
+        "id": "product_led",
+        "keywords": ["產品驅動", "產品創新"]
+      }
+    ],
+    "_comment": "數值實體：識別用戶提到的數值（營收、成本、比例等）",
+    "numeric_value": [
+      {
+        "id": "revenue",
+        "keywords": ["營收", "營業額", "收入", "萬元", "萬"]
+      },
+      {
+        "id": "hr_cost",
+        "keywords": ["人事成本", "人力成本", "薪資成本", "月人事成本"]
+      },
+      {
+        "id": "margin",
+        "keywords": ["毛利", "毛利率", "毛利%", "margin"]
+      },
+      {
+        "id": "ratio",
+        "keywords": ["比例", "比率", "ratio", "%"]
+      }
+    ]
+  }
+}
+

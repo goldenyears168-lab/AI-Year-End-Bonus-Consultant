@@ -1,211 +1,346 @@
 # assets/knowledge.py
 # 年終獎金發放顧問知識庫
 
-BONUS_KB_TEXT = """
-# 年終獎金發放顧問知識庫 (Year-End Bonus Strategic Knowledge Base)
-
-## 第一章：核心哲學 (Core Philosophy)
-1. **獎金定義**：
-   - 年終獎金不是「薪資的延遲支付」，而是「超額利潤的分享」。
-   - **恩惠性給予 vs. 經常性給予**：若勞動契約未明定保障年薪（如保障 14 個月），則年終獎金屬於「恩惠性給予」，企業主有權根據獲利狀況決定發放與否。
-   
-2. **目的性**：
-   - **過去導向**：獎賞過去一年的辛勞（謝禮）。
-   - **未來導向**：購買員工明年的留任與投入（投資）。
-   - **顧問觀點**：若公司沒賺錢但仍發獎金，這叫「維繫士氣」；若公司大賺但發很少，這叫「收割信任」。
-
-3. **拒絕大鍋飯**：
-   - 齊頭式平等（每人都發 1 個月）是管理無能的表現。這會懲罰高績效者，並暗示低績效者「混日子也有糖吃」。
-   - **差異化原則**：最高與最低的獎金倍數應拉開至 2 倍以上（例如 S 級 3 個月，C 級 0.5 個月）。
-
----
-
-## 第二章：獎金池計算模型 (The Calculation Model)
-
-### 1. 總獎金池公式 (Total Pool)
-企業主應先決定「分餅」的大小，再決定如何分給個人。建議公式：
-> **獎金總池 = (稅前淨利 - 股東保留盈餘 - 明年營運週轉金) × 分配係數**
-
-* **保留盈餘建議**：
-  - **穩健型公司**：建議保留 70%~80% 淨利（防禦性策略）。
-  - **成長型公司**：建議保留 50%~60% 淨利（將更多資源回饋團隊以驅動成長）。
-* **分配係數**：通常建議撥出淨利的 **10% ~ 25%** 作為員工分紅池。
-
-### 2. 個人獎金公式 (Individual Allocation)
-> **個人獎金 = 底薪 × (個人考績係數) × (職級權重) × (公司營收達成率)**
-
----
-
-## 第三章：績效分級策略 (Performance Matrix)
-
-建議採用 **「2-7-1 法則」** 或 **「S/A/B/C 分級制」**：
-
-| 等級 | 定義 | 人數比例 | 獎金倍數建議 (以平均值為基準) | 管理意涵 |
-| :--- | :--- | :--- | :--- | :--- |
-| **S (卓越)** | 績效大幅超標，且具備文化影響力 | 前 10% | **1.5 ~ 2.0 倍** | **極力慰留**。這是公司的火車頭，必須讓他們感到「被極度重視」。 |
-| **A (優秀)** | 穩定達標，偶有佳作 | 次 20% | **1.2 ~ 1.3 倍** | **重點培養**。未來的 S 級候選人。 |
-| **B (稱職)** | 符合預期，無重大過失 | 中間 60% | **1.0 倍** (持平) | **維繫主力**。公司的基石，給予市場行情即可。 |
-| **C (待改善)** | 績效未達標或價值觀不符 | 後 10% | **0 ~ 0.5 倍** | **暗示淘汰**。發放微薄獎金或紅包，並配合嚴肅的面談（PIP）。 |
-
----
-
-## 第四章：風險控管與特殊情境 (Risk & Edge Cases)
-
-### 1. 財務風控指標
-- **現金流警戒線**：發放獎金後的銀行現金餘額，必須至少能支撐公司 **6 個月** 的固定開銷（人事+房租）。若低於此線，應縮減獎金。
-- **獲利與獎金脫鉤風險**：若公司虧損但仍想發獎金（為了留人），建議改名為「留任激勵金」或「開工紅包」，金額控制在 0.5 個月以內，並明確告知「這是老闆自掏腰包，非制度性發放」。
-
-### 2. 留才風險指標 (The "0.5 Month" Threshold)
-- 根據統計，當年終獎金低於 **0.5 個月** 時，員工產生「年後轉職」念頭的比例會激增 40%。
-- 若計算結果低於此數值，且該員工為關鍵人才，建議：
-  1. **補齊至 0.5 個月**。
-  2. 或轉換為 **「Q1 績效獎金」**（設定 Q1 目標，達標後 4 月發放），延後現金流壓力並綁定未來績效。
-
-### 3. 特殊人員處理
-- **未滿一年新進員工**：按「在職比例」發放。公式：`計算金額 * (在職天數 / 365)`。
-- **年底前提離職者**：
-  - 若公司規定「發放日需在職」，則**不予發放**。
-  - 若為和平分手且有貢獻，建議給予「感謝紅包」（定額，如 3,600 或 6,000 元）。
-
----
-
-## 第五章：溝通與面談劇本 (Communication Scripts)
-
-發錢只是手段，**「面談」才是賦予獎金意義的時刻**。
-
-### 情境 A：對 S 級員工 (高額獎金)
-* **核心訊息**：肯定貢獻 + 綁定未來 + 賦權。
-* **話術範例**：
-  > 「Jack，今年公司能成長，你的 OO 專案是關鍵。為了感謝你的投入，公司決定給你 **S 級的獎金**，這是全公司前 10% 的水準。這不只是獎勵過去，更是我看好你明年能帶領團隊挑戰 XX 目標。這筆錢你好好規劃，明年我們一起衝。」
-
-### 情境 B：對 B 級員工 (持平獎金)
-* **核心訊息**：感謝辛勞 + 點出成長空間 + 安全感。
-* **話術範例**：
-  > 「小陳，今年辛苦了。在環境這麼變動下，你能穩住 XX 業務，對公司很重要。今年的年終我們維持 **1 個月的水準**。雖然沒有大爆發，但公司很肯定你的穩定性。明年如果你能在 XX 技能上多補強，我相信你的獎金級距有機會往上跳。」
-
-### 情境 C：對 C 級員工 (低獎金/紅包)
-* **核心訊息**：誠實告知 + 績效回顧 + 最後通牒(或鼓勵改善)。
-* **話術範例**：
-  > 「小王，這次的年終可能跟你預期的有落差，是 **0.5 個月**。我想很誠實地跟你說明原因，主要是在 XX 指標上未達標。這筆錢代表公司感謝你的時間付出，但我必須說，以你的資歷，我們對你有更高的期待。明年的 Q1 會是關鍵，我們來訂一下改善計畫好嗎？」
-
-### 情境 D：公司獲利不如預期 (普發少)
-* **核心訊息**：共體時艱 + 老闆承擔 + 信心喊話。
-* **話術範例**：
-  > 「各位夥伴，今年雖然我們沒達到營收目標，導致獎金池縮水。但我知道大家都盡力了。因此，我決定動用一部分的保留盈餘，至少發出 **0.8 個月** 給大家過年。這是公司對大家的承諾。明年我們的策略調整是...只要達標，我承諾明年的獎金池一定加倍奉還。」
-
----
-
-## 第六章：反直覺洞察與觀點化 (Counter-Intuitive Insights & Point of View)
-
-這是頂級顧問的「靈魂」：不是給答案，而是給「觀點」。以下規則會讓 AI 講出老闆不敢講的話。
-
-### 1. 「沒有驚喜，就沒有激勵」法則 (The Surprise Principle)
-
-**核心洞察**：員工的「心理帳戶」不是絕對值，而是「相對變化」。
-
-**觸發條件**：當計算出的獎金金額與去年持平（或變化 < 5%）。
-
-**AI 必須執行的動作**：
-
-⚠️ **強制警告**：「發放金額與去年持平，這在員工心理帳戶等於『沒漲』。即使金額合理，但缺乏『驚喜感』會導致激勵效果減半。」
-
-**具體建議**：
-
-- 撥出總獎金池的 **10%** 設立「特殊名目獎金」（例如：專案突破獎、創新獎、客戶滿意度獎）。
-- 這筆錢不按績效分級，而是「突然宣布」，創造「意外之喜」。
-
-**心理學依據**：行為經濟學的「損失厭惡」理論顯示，人們對「失去預期」的痛苦，遠大於「獲得意外」的快樂。持平 = 失去預期。
-
----
-
-### 2. 「不發錢也是一種策略」法則 (The Zero-Allocation Strategy)
-
-**核心洞察**：給低績效者「微薄獎金」是雙重浪費：浪費錢 + 浪費管理時間。
-
-**觸發條件**：當 C 級員工的計算結果 ≤ 0.5 個月。
-
-**AI 必須執行的動作**：
-
-⚠️ **強制直言**：「給 C 級員工 0.5 個月是浪費資源。這筆錢不足以改變他們的行為，反而會讓他們誤以為『公司對我還算滿意』。」
-
-**具體建議**：
-
-- **給 0 元，但給「選擇權」**：
-  - 選項 A：接受「留職停薪 3 個月」（公司保留職位，但無薪，讓員工去進修或思考）。
-  - 選項 B：接受「轉崗談判」（降職或轉到更適合的部門，但保留基本薪資）。
-  - 選項 C：和平離職（給予「感謝紅包」3,600 元，並提供推薦信）。
-
-**管理學依據**：Netflix 的「只留 A 級員工」文化。低績效者佔用管理者的「認知資源」，不如讓他們離開或轉換跑道。
-
----
-
-### 3. 「老闆的恐懼」偵測法則 (The Fear Detection Rule)
-
-**核心洞察**：過度保留盈餘（> 85%）通常反映老闆對未來的「不安全感」，但這種防禦性策略會導致團隊「縮手縮腳」。
-
-**觸發條件**：當 `retention_rate >= 0.85`（保留 85% 以上）。
-
-**AI 必須執行的動作**：
-
-⚠️ **主動偵測並指出**：「您保留了 90% 盈餘，數據顯示這源於對明年的不安全感。但過度防禦會導致團隊『縮手縮腳』，不敢嘗試新專案，最終形成『惡性循環』：越保守 → 越沒成長 → 越需要保守。」
-
-**具體建議**：
-
-- **釋放 5% 作為「試錯基金」**：
-  - 這筆錢不發給個人，而是設立「內部創業基金」或「創新專案獎金」。
-  - 鼓勵員工提出「高風險、高報酬」的專案，成功者獲得額外獎勵。
-
-**心理學依據**：組織行為學的「心理安全感」理論。當團隊感知到「老闆很害怕」時，會自動降低風險承受度，導致創新停滯。
-
----
-
-### 4. 「差異化必須極端」法則 (The Extreme Differentiation Rule)
-
-**核心洞察**：如果 S 級和 C 級的獎金差距 < 2 倍，等於「假差異化」，會同時激怒兩邊。
-
-**觸發條件**：當 `(S級倍數 / C級倍數) < 2.0`。
-
-**AI 必須執行的動作**：
-
-⚠️ **強制警告**：「您的差異化不夠極端。S 級 1.5 個月 vs C 級 0.8 個月，差距只有 1.9 倍。這會讓 S 級覺得『我這麼努力，只多 0.7 個月？』同時讓 C 級覺得『我這麼差，還有 0.8 個月？』兩邊都不滿意。」
-
-**具體建議**：
-
-- **拉開差距至 3 倍以上**：
-  - S 級：2.5 ~ 3.0 個月
-  - A 級：1.5 ~ 1.8 個月
-  - B 級：1.0 個月
-  - C 級：0 ~ 0.3 個月（或直接 0）
-
----
-
-### 5. 「時間綁定」法則 (The Time-Binding Strategy)
-
-**核心洞察**：發錢的「時機」比「金額」更能影響行為。
-
-**觸發條件**：當計算出的平均月數 < 1.0 個月（發太少）。
-
-**AI 必須執行的動作**：
-
-⚠️ **提出「時間綁定」方案**：「發放金額低於 1 個月，直接發放會讓員工覺得『公司很小氣』。建議改為『Q1 績效獎金』，設定 Q1 目標，達標後 4 月發放。這將現金流壓力延後 3 個月，同時綁定未來績效。」
-
-**具體建議**：
-
-- **分階段發放**：
-  - 現在發：0.5 個月（「過年紅包」）
-  - Q1 達標後發：0.5 個月（「Q1 績效獎金」）
-
-**管理學依據**：期望理論（Expectancy Theory）。員工對「未來可獲得」的獎勵，會產生更強的行為動機，因為他們會「想像獲得時的快樂」。
-
----
-
-【反直覺洞察規則】：
-1. 如果獎金與去年持平 → 必須警告「沒有驚喜，就沒有激勵」，建議設立特殊名目獎金。
-2. 如果 C 級員工 ≤ 0.5 個月 → 必須直言「給 0 元，但給選擇權」。
-3. 如果保留盈餘 ≥ 85% → 必須偵測「老闆的恐懼」，建議釋放 5% 作為試錯基金。
-4. 如果 S/C 差距 < 2 倍 → 必須警告「差異化不夠極端」。
-5. 如果平均月數 < 1.0 → 必須提出「時間綁定」方案。
-
-請在回答中「主動指出」這些反直覺洞察，不要等用戶問。
-"""
-
+import json
+import os
+from pathlib import Path
+
+def load_knowledge_from_json():
+    """
+    從多個 JSON 文件讀取知識庫內容並格式化為文本
+    支持新格式：1-company_info.json, 2-ai_config.json, 3-knowledge_base.json
+    也支持舊格式：knowledge.json（向後兼容）
+    """
+    current_dir = Path(__file__).parent
+    
+    # 嘗試加載新格式（多文件）
+    company_info_path = current_dir / "1-company_info.json"
+    ai_config_path = current_dir / "2-ai_config.json"
+    knowledge_base_path = current_dir / "3-knowledge_base.json"
+    
+    kb_data = {}
+    errors = []
+    
+    # 加載公司信息
+    if company_info_path.exists():
+        try:
+            with open(company_info_path, 'r', encoding='utf-8') as f:
+                kb_data['company_info'] = json.load(f)
+        except json.JSONDecodeError as e:
+            errors.append(f"公司信息 JSON 解析錯誤: {str(e)}")
+    else:
+        errors.append("找不到 1-company_info.json")
+    
+    # 加載 AI 配置
+    if ai_config_path.exists():
+        try:
+            with open(ai_config_path, 'r', encoding='utf-8') as f:
+                kb_data['ai_config'] = json.load(f)
+        except json.JSONDecodeError as e:
+            errors.append(f"AI 配置 JSON 解析錯誤: {str(e)}")
+    else:
+        errors.append("找不到 2-ai_config.json")
+    
+    # 加載知識庫（主要內容）
+    if knowledge_base_path.exists():
+        try:
+            with open(knowledge_base_path, 'r', encoding='utf-8') as f:
+                kb_main = json.load(f)
+                # 將知識庫內容合併到主數據結構
+                kb_data.update(kb_main)
+        except json.JSONDecodeError as e:
+            errors.append(f"知識庫 JSON 解析錯誤: {str(e)}")
+    else:
+        # 向後兼容：嘗試加載舊格式
+        old_json_path = current_dir / "knowledge.json"
+        if old_json_path.exists():
+            try:
+                with open(old_json_path, 'r', encoding='utf-8') as f:
+                    kb_main = json.load(f)
+                    kb_data.update(kb_main)
+            except json.JSONDecodeError as e:
+                errors.append(f"舊知識庫 JSON 解析錯誤: {str(e)}")
+        else:
+            errors.append("找不到 3-knowledge_base.json 或 knowledge.json")
+    
+    if errors and not kb_data:
+        # 如果所有文件都失敗，返回錯誤信息
+        return f"⚠️ 知識庫加載失敗:\n" + "\n".join(f"- {e}" for e in errors)
+    
+    # 格式化為文本
+    return format_knowledge_json(kb_data)
+
+def format_knowledge_json(kb_data):
+    """
+    將 JSON 知識庫數據格式化為 Markdown 文本
+    支持新格式（包含 company_info 和 ai_config）和舊格式
+    """
+    lines = []
+    
+    # 0. 工具介紹（來自 company_info）
+    if 'company_info' in kb_data:
+        company_info = kb_data['company_info']
+        lines.append("# 年終獎金發放顧問工具 (Year-End Bonus Strategic Advisor)")
+        lines.append("")
+        lines.append(f"**工具名稱**: {company_info.get('tool_name', 'N/A')} ({company_info.get('tool_name_en', 'N/A')})")
+        lines.append(f"**版本**: {company_info.get('version', 'N/A')}")
+        lines.append(f"**更新日期**: {company_info.get('last_updated', 'N/A')}")
+        lines.append("")
+        lines.append(f"**描述**: {company_info.get('description', 'N/A')}")
+        lines.append("")
+        lines.append(f"**目標用戶**: {company_info.get('target_audience', 'N/A')}")
+        lines.append("")
+        
+        if 'key_features' in company_info:
+            lines.append("**核心功能**:")
+            for feature in company_info['key_features']:
+                lines.append(f"- {feature}")
+            lines.append("")
+        
+        if 'input_requirements' in company_info:
+            lines.append("**輸入需求**:")
+            for req in company_info['input_requirements']:
+                lines.append(f"- {req}")
+            lines.append("")
+        
+        if 'output_provides' in company_info:
+            lines.append("**輸出內容**:")
+            for output in company_info['output_provides']:
+                lines.append(f"- {output}")
+            lines.append("")
+        
+        lines.append("---")
+        lines.append("")
+    
+    # 1. 元數據（來自知識庫主文件）
+    lines.append("## 知識庫元數據 (Knowledge Base Metadata)")
+    lines.append("")
+    lines.append(f"**知識庫 ID**: {kb_data.get('kb_id', 'N/A')}")
+    lines.append(f"**版本**: {kb_data.get('version', 'N/A')}")
+    lines.append(f"**標題**: {kb_data.get('title', 'N/A')}")
+    lines.append(f"**用途**: {kb_data.get('purpose', 'N/A')}")
+    lines.append("")
+    lines.append("---")
+    lines.append("")
+    
+    # 1.5. AI 配置（意圖和實體提取）
+    if 'ai_config' in kb_data:
+        ai_config = kb_data['ai_config']
+        lines.append("## AI 配置 (AI Configuration)")
+        lines.append("")
+        
+        if 'intents' in ai_config:
+            lines.append("### 意圖識別 (Intent Recognition)")
+            lines.append("")
+            for intent in ai_config['intents']:
+                intent_id = intent.get('id', '')
+                comment = intent.get('_comment', '')
+                keywords = intent.get('keywords', [])
+                if comment:
+                    lines.append(f"**{intent_id}**: {comment}")
+                else:
+                    lines.append(f"**{intent_id}**")
+                if keywords:
+                    lines.append(f"- 關鍵詞: {', '.join(keywords)}")
+                lines.append("")
+        
+        if 'entity_patterns' in ai_config:
+            lines.append("### 實體提取模式 (Entity Extraction Patterns)")
+            lines.append("")
+            for pattern_type, patterns in ai_config['entity_patterns'].items():
+                if pattern_type.startswith('_'):
+                    continue
+                lines.append(f"**{pattern_type}**:")
+                if isinstance(patterns, list):
+                    for pattern in patterns:
+                        pattern_id = pattern.get('id', '')
+                        pattern_keywords = pattern.get('keywords', [])
+                        if pattern_id and pattern_keywords:
+                            lines.append(f"- {pattern_id}: {', '.join(pattern_keywords)}")
+                lines.append("")
+        
+        lines.append("---")
+        lines.append("")
+    
+    # 2. 實體定義
+    if 'entities' in kb_data:
+        entities = kb_data['entities']
+        lines.append("## 實體定義 (Entity Definitions)")
+        lines.append("")
+        
+        # 枚舉類型
+        if 'enums' in entities:
+            lines.append("### 枚舉類型 (Enums)")
+            lines.append("")
+            for enum_name, enum_values in entities['enums'].items():
+                lines.append(f"**{enum_name}**:")
+                if isinstance(enum_values, list):
+                    lines.append("- " + ", ".join(str(v) for v in enum_values))
+                else:
+                    lines.append(f"- {enum_values}")
+                lines.append("")
+        
+        # 表格數據
+        if 'tables' in entities:
+            lines.append("### 配置表格 (Configuration Tables)")
+            lines.append("")
+            
+            # StageConfig
+            if 'StageConfig' in entities['tables']:
+                lines.append("#### 企業發展階段配置 (StageConfig)")
+                lines.append("")
+                lines.append("| 階段 | 名稱 | HR Ratio 範圍 | 總獎金比例 | 季獎金 | 年終獎金 | 說明 |")
+                lines.append("| :--- | :--- | :--- | :--- | :--- | :--- | :--- |")
+                for stage_key, stage_data in entities['tables']['StageConfig'].items():
+                    name = stage_data.get('name', '')
+                    hr_range = stage_data.get('hrRatioRange', {})
+                    hr_min = hr_range.get('min', 0) * 100
+                    hr_max = hr_range.get('max', 0) * 100
+                    bonus = stage_data.get('bonus', {})
+                    total = bonus.get('totalBonusRatio', 0) * 100
+                    quarterly = bonus.get('quarterly', 0) * 100
+                    year_end = bonus.get('yearEnd', 0) * 100
+                    desc = stage_data.get('description', '')
+                    lines.append(f"| {stage_key} | {name} | {hr_min:.0f}%-{hr_max:.0f}% | {total:.0f}% | {quarterly:.1f}% | {year_end:.0f}% | {desc} |")
+                lines.append("")
+            
+            # EngineToDepartmentWeights
+            if 'EngineToDepartmentWeights' in entities['tables']:
+                lines.append("#### 增長引擎與部門權重 (EngineToDepartmentWeights)")
+                lines.append("")
+                for engine_key, engine_data in entities['tables']['EngineToDepartmentWeights'].items():
+                    lines.append(f"**{engine_key}** (增長引擎):")
+                    lines.append("")
+                    weights = engine_data.get('weights', {})
+                    reasons = engine_data.get('reasons', {})
+                    lines.append("| 部門 | 權重 | 說明 |")
+                    lines.append("| :--- | :--- | :--- |")
+                    for dept, weight in weights.items():
+                        reason = reasons.get(dept, '')
+                        lines.append(f"| {dept} | {weight} | {reason} |")
+                    lines.append("")
+            
+            # IndustryCategoryInfo
+            if 'IndustryCategoryInfo' in entities['tables']:
+                lines.append("#### 行業類別資訊 (IndustryCategoryInfo)")
+                lines.append("")
+                for cat_key, cat_info in entities['tables']['IndustryCategoryInfo'].items():
+                    icon = cat_info.get('icon', '')
+                    name = cat_info.get('name', '')
+                    lines.append(f"- {icon} **{cat_key}**: {name}")
+                lines.append("")
+        
+        lines.append("---")
+        lines.append("")
+    
+    # 3. 規則（頂層）
+    if 'rules' in kb_data:
+        lines.append("## 計算規則 (Calculation Rules)")
+        lines.append("")
+        for rule_key, rule_data in kb_data['rules'].items():
+            title = rule_data.get('title', rule_key)
+            inputs = rule_data.get('inputs', [])
+            formula = rule_data.get('formula', '')
+            outputs = rule_data.get('outputs', [])
+            notes = rule_data.get('notes', '')
+            
+            lines.append(f"### {title} ({rule_key})")
+            lines.append("")
+            if inputs:
+                lines.append(f"**輸入**: {', '.join(inputs)}")
+            if outputs:
+                lines.append(f"**輸出**: {', '.join(outputs)}")
+            if formula:
+                lines.append(f"**公式**: `{formula}`")
+            if notes:
+                lines.append(f"**說明**: {notes}")
+            lines.append("")
+        
+        lines.append("---")
+        lines.append("")
+    
+    # 4. 腳本（頂層）
+    if 'scripts' in kb_data:
+        lines.append("## 溝通腳本 (Communication Scripts)")
+        lines.append("")
+        for script_key, script_data in kb_data['scripts'].items():
+            title = script_data.get('title', script_key)
+            when = script_data.get('when', '')
+            text = script_data.get('text', '')
+            
+            lines.append(f"### {title} ({script_key})")
+            lines.append("")
+            if when:
+                lines.append(f"**觸發條件**: {when}")
+                lines.append("")
+            if text:
+                lines.append(f"**話術**: {text}")
+                lines.append("")
+        
+        lines.append("---")
+        lines.append("")
+    
+    # 5. 範例（頂層）
+    if 'examples' in kb_data:
+        lines.append("## 計算範例 (Calculation Examples)")
+        lines.append("")
+        for example_key, example_data in kb_data['examples'].items():
+            title = example_data.get('title', example_key)
+            scenario = example_data.get('scenario', '')
+            calculation = example_data.get('calculation', '')
+            output = example_data.get('output', '')
+            notes = example_data.get('notes', '')
+            
+            lines.append(f"### {title} ({example_key})")
+            lines.append("")
+            if scenario:
+                lines.append(f"**情境**: {scenario}")
+                lines.append("")
+            if calculation:
+                lines.append(f"**計算過程**: {calculation}")
+                lines.append("")
+            if output:
+                lines.append(f"**結果**: {output}")
+                lines.append("")
+            if notes:
+                lines.append(f"**備註**: {notes}")
+                lines.append("")
+        
+        lines.append("---")
+        lines.append("")
+    
+    # 6. 檢索塊（知識塊）
+    if 'retrieval' in kb_data and 'chunks' in kb_data['retrieval']:
+        lines.append("## 知識塊 (Knowledge Chunks)")
+        lines.append("")
+        lines.append("以下知識塊用於回答常見問題：")
+        lines.append("")
+        
+        for chunk in kb_data['retrieval']['chunks']:
+            chunk_id = chunk.get('chunk_id', '')
+            title = chunk.get('title', '')
+            tags = chunk.get('tags', [])
+            q_triggers = chunk.get('q_triggers', [])
+            content = chunk.get('content', '')
+            
+            lines.append(f"### {title} ({chunk_id})")
+            lines.append("")
+            if tags:
+                lines.append(f"**標籤**: {', '.join(tags)}")
+                lines.append("")
+            if q_triggers:
+                lines.append("**相關問題**:")
+                for q in q_triggers:
+                    lines.append(f"- {q}")
+                lines.append("")
+            if content:
+                lines.append(f"**內容**: {content}")
+                lines.append("")
+        
+        lines.append("---")
+        lines.append("")
+    
+    return "\n".join(lines)
+
+# 從 JSON 加載知識庫
+BONUS_KB_TEXT = load_knowledge_from_json()

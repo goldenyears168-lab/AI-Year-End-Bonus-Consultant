@@ -6,8 +6,8 @@ from typing import Dict, Any
 
 class AdvisorNode(BaseNode):
     def execute(self, context: Dict[str, Any]) -> Dict[str, Any]:
-        intent = context.get("current_intent", "GENERATE_REPORT")
-        user_data = context["user_input"]
+        intent = context.get("current_intent", "CHAT")
+        user_data = context.get("user_input", {})
         metrics = context.get("metrics", {})
         risks = "\n".join(context.get("risks", []))
         
@@ -36,6 +36,13 @@ class AdvisorNode(BaseNode):
                 per_head=metrics.get('per_head', 'N/A'),
                 months=metrics.get('months', 'N/A'),
                 risks=risks if risks else "無"
+            )
+            user_msg = context.get("latest_user_question", "")
+        
+        elif intent == "CHAT":
+            # 純對話模式，只使用知識庫
+            system_prompt = PROMPT_TEMPLATES["chat"].format(
+                knowledge_base=BONUS_KB_TEXT
             )
             user_msg = context.get("latest_user_question", "")
         

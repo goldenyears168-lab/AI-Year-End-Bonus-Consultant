@@ -1,0 +1,38 @@
+{
+  "_file_description": "年終獎金顧問工具資訊：包含工具介紹、使用說明等。面向 5-50 人中小企業主。",
+  "version": "1.0.0",
+  "last_updated": "2025-12-15",
+  "tool_name": "部門級年終獎金分配器",
+  "tool_name_en": "Department Bonus Allocator",
+  "description": "專為 5-50 人中小企業設計的年終獎金分配顧問工具，協助企業主在財務安全邊界內，做出公平且符合增長策略的部門獎金分配決策。",
+  "target_audience": "中小企業主、人資主管、財務主管",
+  "key_features": [
+    "企業發展階段診斷（生存期／組織期／擴展期／規模期）",
+    "HR Ratio 風險警示與分析",
+    "基於增長引擎的部門優先順序建議",
+    "財務安全邊界內的獎金池計算",
+    "超支情況下的妥協分配方案"
+  ],
+  "input_requirements": [
+    "年營收（萬元）",
+    "行業類別",
+    "毛利率（或由系統根據行業自動計算）",
+    "每月人事成本（萬元）",
+    "部門配置（名稱、類型、人數）",
+    "增長引擎問卷（3 題）"
+  ],
+  "output_provides": [
+    "企業發展階段診斷與說明",
+    "HR Ratio 計算與風險評估",
+    "年終獎金池建議金額",
+    "各部門獎金分配明細（金額、比例、人均）",
+    "分配理由說明（基於增長引擎與部門權重）",
+    "風險警示與妥協方案（如適用）"
+  ],
+  "_section_contact_channels": "支援與聯繫",
+  "contact_channels": {
+    "support_email": "support@bonus-advisor.com",
+    "documentation": "https://docs.bonus-advisor.com"
+  }
+}
+

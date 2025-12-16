@@ -1,0 +1,24 @@
+[server]
+# 启用CORS以支持跨域请求
+enableCORS = false
+enableXsrfProtection = true
+
+[browser]
+# 浏览器相关设置
+gatherUsageStats = false
+serverAddress = "localhost"
+serverPort = 8501
+
+[theme]
+# 主题设置（可选）
+primaryColor = "#FF6B6B"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F0F2F6"
+textColor = "#262730"
+font = "sans serif"
+
+[client]
+# 客户端设置
+showErrorDetails = true
+toolbarMode = "auto"
+

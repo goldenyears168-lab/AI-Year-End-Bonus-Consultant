@@ -1,0 +1,520 @@
+{
+  "kb_id": "bonus_allocator_mvp",
+  "version": "1.0.0",
+  "locale": "zh-TW",
+  "title": "部門級年終獎金分配器 MVP",
+  "purpose": "輸入營收×行業×毛利×月人事成本×部門配置×增長引擎，輸出財務安全邊界內的年終獎金部門分配建議與話術",
+  "entities": {
+    "enums": {
+      "IndustryCategoryKey": [
+        "agriculture",
+        "retail",
+        "restaurant",
+        "hospitality",
+        "manufacturing",
+        "construction",
+        "transportation",
+        "it_services",
+        "professional_services",
+        "healthcare",
+        "education",
+        "finance_insurance",
+        "personal_services"
+      ],
+      "EnterpriseStage": ["survival", "organization", "expansion", "scale"],
+      "GrowthEngine": [
+        "sales_led",
+        "ops_led",
+        "media_led",
+        "channel_led",
+        "founder_led",
+        "product_led"
+      ],
+      "DepartmentType": [
+        "hr",
+        "sales",
+        "assets_finance",
+        "product_service",
+        "rd_qa",
+        "pr_marketing",
+        "management"
+      ],
+      "RiskLevel": ["normal", "high", "critical"]
+    },
+    "schemas": {
+      "CompanyInputMVP": {
+        "companyName": "string",
+        "revenue_wan": "number",
+        "industryCategoryKey": "IndustryCategoryKey",
+        "industryKey": "string",
+        "industryGrossMarginPct": "number",
+        "userGrossMarginPct": "number|null",
+        "finalGrossMarginPct": "number",
+        "monthlyHRCost_wan": "number",
+        "departments": [
+          {
+            "name": "string",
+            "type": "DepartmentType",
+            "headcount": "number"
+          }
+        ],
+        "engineAnswers": {
+          "q1": "string",
+          "q2": "string",
+          "q3": "string"
+        }
+      },
+      "BonusResultMVP": {
+        "grossProfit": "number",
+        "annualHRCost": "number",
+        "hrRatio": "number",
+        "enterpriseStage": "EnterpriseStage",
+        "primaryEngine": "GrowthEngine",
+        "totalBonusPool": "number",
+        "ideal": {
+          "idealTotalHRCost": "number",
+          "idealSalaryCost": "number",
+          "idealBonusCost": "number",
+          "idealLegalCost": "number"
+        },
+        "allocations": [
+          {
+            "departmentName": "string",
+            "departmentType": "DepartmentType",
+            "bonusAmount": "number",
+            "percentage": "number",
+            "perCapita": "number",
+            "reason": "string"
+          }
+        ],
+        "hrRatioWarning": {
+          "isAbnormal": "boolean",
+          "riskLevel": "RiskLevel",
+          "warningMessage": "string",
+          "compromiseSolution": {
+            "priority": ["DepartmentType"],
+            "secondary": ["DepartmentType"],
+            "symbolic": ["DepartmentType"]
+          }
+        }
+      }
+    },
+    "tables": {
+      "StageConfig": {
+        "survival": {
+          "name": "生存期",
+          "hrRatioRange": { "min": 0.30, "max": 0.40 },
+          "bonus": { "totalBonusRatio": 0.30, "quarterly": 0.015, "yearEnd": 0.24 },
+          "description": "保命、現金流優先。老闆省、現金流第一，不允許高薪高獎金。幫助控制現金流、獎金集中在年底。"
+        },
+        "organization": {
+          "name": "組織期",
+          "hrRatioRange": { "min": 0.40, "max": 0.50 },
+          "bonus": { "totalBonusRatio": 0.30, "quarterly": 0.03, "yearEnd": 0.18 },
+          "description": "穩定輸出＋開始追求短期成果。開始用專才、留人才，部門承載力變重要。平衡短期與長期激勵。"
+        },
+        "expansion": {
+          "name": "擴展期",
+          "hrRatioRange": { "min": 0.50, "max": 0.60 },
+          "bonus": { "totalBonusRatio": 0.30, "quarterly": 0.04, "yearEnd": 0.14 },
+          "description": "速度優先。重人才、重速度，績效薪資占比高。短期激勵為主，快打市場。"
+        },
+        "scale": {
+          "name": "規模期",
+          "hrRatioRange": { "min": 0.45, "max": 0.55 },
+          "bonus": { "totalBonusRatio": 0.30, "quarterly": 0.03, "yearEnd": 0.18 },
+          "description": "穩定、效率、降低變動。降本增效，固定薪＋少量獎金。穩定激勵、控制變動成本。"
+        }
+      },
+      "EngineToDepartmentWeights": {
+        "sales_led": {
+          "weights": {
+            "sales": 1.5,
+            "pr_marketing": 1.2,
+            "product_service": 0.9,
+            "rd_qa": 0.7,
+            "assets_finance": 0.6,
+            "hr": 0.6,
+            "management": 0.8
+          },
+          "reasons": {
+            "sales": "業務銷售是銷售驅動型的核心增長部門",
+            "pr_marketing": "行銷支援拓客與轉化效率",
+            "product_service": "交付穩定支撐成交與回購",
+            "rd_qa": "改善品質但非短期核心",
+            "assets_finance": "財務支援回款與風險控制",
+            "hr": "人員補位但不是主要增長槓桿",
+            "management": "策略與資源協調"
+          }
+        },
+        "ops_led": {
+          "weights": {
+            "product_service": 1.5,
+            "rd_qa": 1.3,
+            "sales": 0.9,
+            "pr_marketing": 0.8,
+            "assets_finance": 0.7,
+            "hr": 0.7,
+            "management": 0.9
+          },
+          "reasons": {
+            "product_service": "產品服務是營運驅動的核心，流程優化與效率提升的關鍵",
+            "rd_qa": "研發品管確保品質與流程標準化",
+            "sales": "業務配合營運優化後的交付能力",
+            "pr_marketing": "行銷支援但非核心增長引擎",
+            "assets_finance": "財務支援成本控制與效率分析",
+            "hr": "人員培訓與組織效率",
+            "management": "營運策略與流程管理"
+          }
+        },
+        "media_led": {
+          "weights": {
+            "pr_marketing": 1.5,
+            "sales": 1.2,
+            "product_service": 1.0,
+            "rd_qa": 0.7,
+            "assets_finance": 0.6,
+            "hr": 0.6,
+            "management": 0.9
+          },
+          "reasons": {
+            "pr_marketing": "公關行銷是媒體驅動的核心，品牌與內容曝光的關鍵",
+            "sales": "業務配合品牌影響力轉化訂單",
+            "product_service": "產品服務支撐品牌承諾",
+            "rd_qa": "品質支撐但非短期核心",
+            "assets_finance": "財務支援行銷預算管理",
+            "hr": "人員補位但不是主要增長槓桿",
+            "management": "品牌策略與內容方向"
+          }
+        },
+        "channel_led": {
+          "weights": {
+            "sales": 1.4,
+            "product_service": 1.3,
+            "pr_marketing": 1.0,
+            "rd_qa": 0.8,
+            "assets_finance": 0.7,
+            "hr": 0.6,
+            "management": 0.9
+          },
+          "reasons": {
+            "sales": "業務是通路驅動的核心，合作夥伴與平台拓展的關鍵",
+            "product_service": "產品服務配合通路需求",
+            "pr_marketing": "行銷支援通路品牌推廣",
+            "rd_qa": "品質確保通路信任",
+            "assets_finance": "財務支援通路合作與結算",
+            "hr": "人員補位但不是主要增長槓桿",
+            "management": "通路策略與合作管理"
+          }
+        },
+        "founder_led": {
+          "weights": {
+            "management": 1.5,
+            "sales": 1.3,
+            "pr_marketing": 1.0,
+            "product_service": 0.8,
+            "rd_qa": 0.7,
+            "assets_finance": 0.7,
+            "hr": 0.6
+          },
+          "reasons": {
+            "management": "管理層是創辦人驅動的核心，高度依賴老闆個人影響力",
+            "sales": "業務配合創辦人關係網絡",
+            "pr_marketing": "行銷支援個人品牌轉化",
+            "product_service": "產品服務支撐個人承諾",
+            "rd_qa": "品質支撐但非核心",
+            "assets_finance": "財務支援個人關係維護成本",
+            "hr": "人員補位但不是主要增長槓桿"
+          }
+        },
+        "product_led": {
+          "weights": {
+            "product_service": 1.5,
+            "rd_qa": 1.4,
+            "sales": 1.1,
+            "pr_marketing": 1.0,
+            "assets_finance": 0.7,
+            "hr": 0.7,
+            "management": 0.9
+          },
+          "reasons": {
+            "product_service": "產品服務是產品驅動的核心，新產品與創新的關鍵",
+            "rd_qa": "研發品管確保創新品質與技術領先",
+            "sales": "業務配合產品優勢轉化訂單",
+            "pr_marketing": "行銷支援產品推廣",
+            "assets_finance": "財務支援研發投入",
+            "hr": "人員培訓與技術人才",
+            "management": "產品策略與創新方向"
+          }
+        }
+      },
+      "IndustryCategoryInfo": {
+        "agriculture": { "name": "農業、林業、漁業、牧業", "icon": "🌾" },
+        "retail": { "name": "批發與零售業", "icon": "🛒" },
+        "restaurant": { "name": "餐飲業", "icon": "🍽️" },
+        "hospitality": { "name": "住宿與旅遊業", "icon": "🏨" },
+        "manufacturing": { "name": "製造業", "icon": "🏭" },
+        "construction": { "name": "營造業與不動產", "icon": "🏗️" },
+        "transportation": { "name": "運輸、物流與倉儲", "icon": "🚚" },
+        "it_services": { "name": "資訊技術與軟體服務", "icon": "💻" },
+        "professional_services": { "name": "專業服務與顧問業", "icon": "👔" },
+        "healthcare": { "name": "醫療保健與社會福利", "icon": "🏥" },
+        "education": { "name": "教育與培訓服務", "icon": "📚" },
+        "finance_insurance": { "name": "金融與保險服務", "icon": "💰" },
+        "personal_services": { "name": "個人服務與生活服務", "icon": "💆" }
+      },
+      "GrossMarginUserSelection": {
+        "below_30": 0.30,
+        "30_40": 0.35,
+        "40_50": 0.45,
+        "50_60": 0.55,
+        "60_70": 0.65,
+        "above_70": 0.75
+      },
+      "StageRevenueThresholds": {
+        "base": {
+          "survival": 0,
+          "organization": 1000,
+          "expansion": 5000,
+          "scale": 20000
+        },
+        "marginAdjustmentBase": 0.5
+      }
+    },
+    "rules": {
+      "R_GROSS_MARGIN_FINAL": {
+        "title": "最終毛利率加權",
+        "inputs": ["industryGrossMarginPct", "userGrossMarginPct"],
+        "formula": "final = industryGrossMarginPct*0.7 + userGrossMarginPct*0.3; if userGrossMarginPct is null => final=industryGrossMarginPct",
+        "outputs": ["finalGrossMarginPct"],
+        "notes": "用行業中位數穩定錨定，讓老闆直覺只做微調。以行業中位數為主（70%），老闆的直覺當作微調（30%），避免老闆過度樂觀或悲觀。"
+      },
+      "R_ENTERPRISE_STAGE": {
+        "title": "企業階段判斷（只看營收×毛利）",
+        "inputs": ["revenue_wan", "finalGrossMarginPct"],
+        "formula": "baseThresholds={survival:0,organization:1000,expansion:5000,scale:20000}; marginAdj=(finalGrossMarginPct<0.5)?(0.5/finalGrossMarginPct):1; finalThreshold=baseThreshold*marginAdj; compare revenue_wan to thresholds => stage",
+        "outputs": ["enterpriseStage"],
+        "notes": "HR Ratio 只用於風險與獎金池收斂，不影響階段。企業階段代表企業的「能力」與「階段性任務」，由營收 × 毛利決定，非常客觀。"
+      },
+      "R_HR_RATIO": {
+        "title": "HR Ratio 計算",
+        "inputs": ["revenue_wan", "finalGrossMarginPct", "monthlyHRCost_wan"],
+        "formula": "revenueYuan=revenue_wan*10000; grossProfit=revenueYuan*finalGrossMarginPct; salaryBonusYear=monthlyHRCost_wan*10000*12; legalCost=salaryBonusYear*(12/88); annualHRCost=salaryBonusYear+legalCost; hrRatio=annualHRCost/grossProfit",
+        "outputs": ["grossProfit", "annualHRCost", "hrRatio"],
+        "notes": "法定成本（勞保＋健保＋勞退 6%）假設佔整體人事成本的 12%，也就是薪資＋獎金 = 88%，法定 = 12%。"
+      },
+      "R_HR_RISK_TIER": {
+        "title": "HR Ratio 風險分級",
+        "inputs": ["hrRatio"],
+        "formula": "if hrRatio>0.8 => critical; else if hrRatio>=0.65 => critical; else if hrRatio>=0.6 => high; else normal",
+        "outputs": ["riskLevel", "isAbnormal"],
+        "notes": "hrRatio > 60% 視為異常高人事成本。60%–65%：high；65%–80%：critical；80% 以上：critical（極高風險）。"
+      },
+      "R_BONUS_POOL": {
+        "title": "年終獎金池決策",
+        "inputs": ["grossProfit", "annualHRCost", "enterpriseStage"],
+        "formula": "idealTotalHRCost=grossProfit*StageConfig[stage].hrRatioRange.max; isOverBudget=annualHRCost>idealTotalHRCost; standard=idealTotalHRCost*StageConfig[stage].bonus.yearEnd; conservative=standard*0.5; if annualHRCost>idealTotalHRCost*1.5 => totalBonusPool=0; else if isOverBudget => totalBonusPool=min(conservative, idealTotalHRCost*1.5-annualHRCost); else totalBonusPool=standard",
+        "outputs": ["totalBonusPool", "isOverBudget"],
+        "notes": "這裡是把「現實人事成本」跟「理想人事成本上限」做對比，讓系統可以說出：「你現在已經吃掉未來投資的錢了，所以獎金要保守。」"
+      },
+      "R_ALLOCATE_STANDARD": {
+        "title": "標準分配",
+        "inputs": ["totalBonusPool", "departments", "primaryEngine"],
+        "formula": "deptWeight=EngineToDepartmentWeights[engine].weights[dept.type]||1; totalWeight=sum(deptWeight); deptBonus=totalBonusPool*(deptWeight/totalWeight); perCapita=deptBonus/dept.headcount",
+        "outputs": ["allocations"],
+        "notes": "分配比例（部門）＝ calculatedWeight / totalWeight；部門獎金＝ totalBonusPool × 分配比例；人均獎金＝ 部門獎金 / headcount。"
+      },
+      "R_ALLOCATE_PRIORITY": {
+        "title": "優先級保障分配",
+        "inputs": ["totalBonusPool", "departments", "primaryEngine", "isOverBudget", "standardBonusPool"],
+        "trigger": "isOverBudget==true AND totalBonusPool < standardBonusPool*0.8",
+        "formula": "core:weight>=1.3 => 60%; important:1.0~1.3 =>30%; support:<1.0 => remainder (may be 0)",
+        "outputs": ["allocations"],
+        "notes": "啟動條件：已超支且 totalBonusPool < standardBonusPool × 80%（視為「資源明顯不足」）。核心部門：weight ≥ 1.3；重要部門：1.0 ≤ weight < 1.3；支撐部門：weight < 1.0。預算配置：60% 給核心部門，30% 給重要部門，剩餘給支撐部門；若剩餘為 0，則支撐部門獎金為 0，並加上「資源緊張，暫緩發放」提示。"
+      },
+      "R_GROWTH_ENGINE": {
+        "title": "增長引擎診斷",
+        "inputs": ["engineAnswers"],
+        "formula": "Q1–Q3，每題選到某引擎一次即加 1 分；分數最高者 → primaryEngine；若平手，以 Q1 答案優先",
+        "outputs": ["primaryEngine"],
+        "notes": "每個行業族群都有一份 3 題、單選題的問卷，每個選項對應一個引擎。"
+      }
+    },
+    "scripts": {
+      "S_STAGE_EXPLAIN_SURVIVAL": {
+        "title": "生存期說法",
+        "when": "enterpriseStage==survival",
+        "text": "你的企業現在還在保命階段，人事成本應該盡量壓在毛利的 30–40%。這時候獎金主要是為了「關鍵少數」留下來，不能太灑，現金流優先。"
+      },
+      "S_STAGE_EXPLAIN_ORGANIZATION": {
+        "title": "組織期說法",
+        "when": "enterpriseStage==organization",
+        "text": "你已經開始有一些穩定輸出，這時候要慢慢養「合適的人」。獎金可以用來拉開關鍵職位和一般職位的差距。"
+      },
+      "S_STAGE_EXPLAIN_EXPANSION": {
+        "title": "擴展期說法",
+        "when": "enterpriseStage==expansion",
+        "text": "你現在是在「搶速度」的階段，人事成本可以到 50–60%，但獎金要偏短期、偏業績，讓團隊快打快收。"
+      },
+      "S_STAGE_EXPLAIN_SCALE": {
+        "title": "規模期說法",
+        "when": "enterpriseStage==scale",
+        "text": "你已經坐穩一個規模，需要的是效率而不是衝刺。薪水偏穩定，獎金比例可以下降，改以長期激勵為主。"
+      },
+      "S_HR_RATIO_TOO_HIGH": {
+        "title": "HR Ratio 過高警示說法",
+        "when": "riskLevel in [high,critical]",
+        "text": "以你目前的階段，人事成本合理區間是 {stageMin}-{stageMax}%，但你現在 HR Ratio 是 {hrRatio}%。這代表原本該投資在市場拓展、行銷品牌、業務擴展、設備更新、職員訓練、資金儲備的錢，被人事吃掉了。若仍要發年終，建議先保核心引擎部門，其餘採象徵性發放。"
+      },
+      "S_ENGINE_TO_BONUS": {
+        "title": "增長引擎連到部門獎金說法",
+        "when": "explaining allocation",
+        "text": "既然你過去 12 個月的成長，是靠 {primaryEngine}，那我們在獎金上就要把 {primaryEngine} 對應的部門，放在第一順位，不然你就是用獎金在「獎錯地方」。"
+      },
+      "S_STAGE_VS_HR_RATIO_SEPARATION": {
+        "title": "階段與 HR Ratio 分離說明",
+        "when": "explaining stage determination",
+        "text": "企業階段，只看兩件事：你賺多少（營收）、你賺得多不多（毛利）。這代表你的「養人能力」。HR Ratio，不是決定你在哪個階段，是決定：你現在用人的方式，有沒有吃掉你的未來？HR Ratio 偏高 → 先發警示，再建議保守發獎金。HR Ratio 偏低 → 代表你太省，但不是階段低。"
+      }
+    },
+    "examples": {
+      "E_MARGIN_ADJUSTMENT": {
+        "title": "毛利調整係數範例",
+        "scenario": "進入組織期門檻計算",
+        "input": {
+          "baseThreshold": 1000,
+          "grossMarginPct": 0.4
+        },
+        "calculation": "marginAdjustment = 0.5 / 0.4 = 1.25; finalThreshold = 1000 × 1.25 = 1250 萬",
+        "output": "40% 毛利就要 1250 萬才能進入組織階段",
+        "notes": "毛利越低，門檻越高，越難升級階段"
+      },
+      "E_STAGE_DETERMINATION": {
+        "title": "階段判斷範例",
+        "scenario": "營收 5000 萬，毛利 40%",
+        "input": {
+          "revenue_wan": 5000,
+          "finalGrossMarginPct": 0.4
+        },
+        "calculation": "擴展期基準門檻 = 5000 萬；marginAdjustment = 0.5 / 0.4 = 1.25；調整後門檻 = 5000 × 1.25 = 6250 萬",
+        "output": "實際營收 5000 萬 < 調整後門檻 6250 萬，因此仍為組織期",
+        "notes": "40% 毛利就要 6250 萬才能進入擴展階段"
+      }
+    }
+  },
+  "retrieval": {
+    "tags": [
+      "stage",
+      "hr_ratio",
+      "bonus_pool",
+      "allocation",
+      "growth_engine",
+      "risk",
+      "principle",
+      "calculation",
+      "script"
+    ],
+    "aliases": {
+      "企業階段": ["stage", "enterprise_stage", "發展階段"],
+      "HR Ratio": ["hr_ratio", "人事成本比例", "人事成本風險"],
+      "獎金池": ["bonus_pool", "年終獎金", "獎金分配"],
+      "增長引擎": ["growth_engine", "primary_engine", "成長引擎"]
+    },
+    "chunks": [
+      {
+        "chunk_id": "C_STAGE_VS_HR_RATIO_SEPARATION",
+        "title": "階段與 HR Ratio 分離原則",
+        "tags": ["principle", "stage", "hr_ratio", "why"],
+        "q_triggers": [
+          "為什麼階段不看HR Ratio",
+          "企業階段怎麼判斷",
+          "HR Ratio 會影響階段嗎",
+          "階段判斷依據是什麼"
+        ],
+        "content": "企業階段只看營收×毛利（能力）；HR Ratio 是行為風險，只影響獎金池與分配策略，不影響階段。企業階段代表企業的「能力」與「階段性任務」，由營收 × 毛利決定，非常客觀。HR Ratio 代表企業的「行為」與「用人成本風險」，不該影響企業屬於哪個階段。若混在一起會造成邏輯混亂：例如一間營收 1 億公司，只因 HR Ratio 低，不能稱為「生存期」；或營收 800 萬的公司 HR Ratio 高，也不能叫做「擴展期」。"
+      },
+      {
+        "chunk_id": "C_STAGE_DETERMINATION",
+        "title": "企業階段判斷邏輯",
+        "tags": ["stage", "calculation", "revenue", "margin"],
+        "q_triggers": [
+          "怎麼判斷企業階段",
+          "階段門檻是多少",
+          "營收多少算哪個階段",
+          "毛利如何影響階段"
+        ],
+        "content": "企業階段判斷只看營收×毛利，不受 HR Ratio 影響。基準營收門檻（假設毛利率 50% 時）：生存期 < 1000 萬；組織期 1000-5000 萬；擴展期 5000-20000 萬；規模期 ≥ 20000 萬。若實際毛利 < 50%，使用毛利調整係數：marginAdjustment = (grossMarginPct < 0.5) ? (0.5 / grossMarginPct) : 1。調整後門檻 = 基準門檻 × marginAdjustment。毛利越高 → 越容易撐起團隊 → 較容易進入下一階段；毛利越低 → 同樣的營收也更吃力 → 需要更高營收才能達到下一階段。"
+      },
+      {
+        "chunk_id": "C_HR_RATIO_RISK",
+        "title": "HR Ratio 風險分析",
+        "tags": ["hr_ratio", "risk", "warning"],
+        "q_triggers": [
+          "HR Ratio 多少算高",
+          "人事成本風險怎麼判斷",
+          "什麼時候要警告",
+          "HR Ratio 過高怎麼辦"
+        ],
+        "content": "HR Ratio = 年度人事成本 ÷ 年毛利（包含薪水、獎金、勞健保、勞退）。hrRatio > 60% 視為異常高人事成本。風險等級：60%–65%：high；65%–80%：critical；80% 以上：critical（極高風險）。HR Ratio 只用於風險警示，不用於判斷企業發展階段。當 HR Ratio 過高時，系統會告訴老闆：目前處於哪個階段、該階段建議的人事成本區間、現在的 HR Ratio 幾%、點出「這些錢原本應該投在」市場拓展、行銷品牌、業務擴展、設備更新、職員訓練、資金儲備。"
+      },
+      {
+        "chunk_id": "C_BONUS_POOL_LOGIC",
+        "title": "年終獎金池決策邏輯",
+        "tags": ["bonus_pool", "over_budget", "conservative"],
+        "q_triggers": [
+          "怎麼算年終獎金池",
+          "超支要怎麼發",
+          "嚴重超支怎麼辦",
+          "獎金池怎麼決定"
+        ],
+        "content": "以該階段 HR Ratio 上限推導理想人事成本上限：idealTotalHRCost = grossProfit × StageConfig[stage].hrRatioRange.max。判斷是否超支：isOverBudget = (annualHRCost > idealTotalHRCost)。建立三層獎金建議：standardBonusPool = idealTotalHRCost × StageConfig[stage].bonus.yearEnd；conservativeBonusPool = standard × 50%。決策：未超支 → 使用 standardBonusPool；嚴重超支（>150%）→ 建議 totalBonusPool = 0；輕度超支 → 檢查看 annualHRCost + conservativeBonusPool 是否 > maxTotalPayrollLimit = idealTotalHRCost × 1.5，若超過就縮小獎金到不超過 150% 上限的最大值，否則使用 conservativeBonusPool。"
+      },
+      {
+        "chunk_id": "C_ALLOCATION_MODE",
+        "title": "部門獎金分配模式",
+        "tags": ["allocation", "priority", "standard"],
+        "q_triggers": [
+          "怎麼分配部門獎金",
+          "優先級保障是什麼",
+          "標準分配怎麼算",
+          "部門權重怎麼用"
+        ],
+        "content": "標準模式：計算部門權重 calculatedWeight = EngineToDepartmentWeights[engine].weights[dept.type] || 1.0；totalWeight = Σ dept.calculatedWeight；分配比例（部門）＝ calculatedWeight / totalWeight；部門獎金＝ totalBonusPool × 分配比例；人均獎金＝ 部門獎金 / headcount。優先級保障模式（啟動條件：已超支且 totalBonusPool < standardBonusPool × 80%）：按 calculatedWeight 從大到小排序；核心部門（weight ≥ 1.3）→ 60%；重要部門（1.0 ≤ weight < 1.3）→ 30%；支撐部門（weight < 1.0）→ 剩餘（若剩餘為 0，則支撐部門獎金為 0，並加上「資源緊張，暫緩發放」提示）。"
+      },
+      {
+        "chunk_id": "C_GROWTH_ENGINE_WEIGHTS",
+        "title": "增長引擎與部門權重",
+        "tags": ["growth_engine", "weights", "allocation"],
+        "q_triggers": [
+          "增長引擎怎麼影響獎金",
+          "部門權重怎麼決定",
+          "銷售驅動怎麼分配",
+          "不同引擎的權重"
+        ],
+        "content": "增長引擎決定部門優先順序。例：sales_led → sales 1.5（核心）、pr_marketing 1.2、product_service 0.9、rd_qa 0.7、assets_finance 0.6、hr 0.6、management 0.8。每個引擎都有一組對應的 7 部門權重＋說明文字。將「增長引擎」轉換成「部門優先順序」，讓獎金分配與增長引擎一致。"
+      },
+      {
+        "chunk_id": "C_GROSS_MARGIN_CALCULATION",
+        "title": "毛利率計算邏輯",
+        "tags": ["margin", "calculation", "industry"],
+        "q_triggers": [
+          "毛利率怎麼算",
+          "行業毛利率怎麼用",
+          "最終毛利率怎麼決定"
+        ],
+        "content": "industryGrossMarginPct：系統根據「具體行業」自動抓的行業中位數毛利率。userGrossMarginPct：老闆自己選擇的「毛利率區間」代表值（30% 以下：0.30；30%~40%：0.35；40%~50%：0.45；50%~60%：0.55；60%~70%：0.65；70% 以上：0.75；不確定：使用 industryGrossMarginPct）。finalGrossMarginPct：加權平均毛利率 = 行業中位數 × 70% + 使用者自估 × 30%（若 userGrossMarginPct 為 null，則 final = industryGrossMarginPct）。以行業中位數為主（70%），老闆的直覺當作微調（30%），避免老闆過度樂觀或悲觀。"
+      },
+      {
+        "chunk_id": "C_STAGE_CONFIG",
+        "title": "企業發展階段配置",
+        "tags": ["stage", "config", "hr_ratio_range", "bonus"],
+        "q_triggers": [
+          "各階段的 HR Ratio 範圍",
+          "各階段的獎金比例",
+          "階段配置詳情"
+        ],
+        "content": "生存期：HR Ratio 範圍 30%-40%，總獎金 30%（季獎金 1.5%，年終獎金 24%）。組織期：HR Ratio 範圍 40%-50%，總獎金 30%（季獎金 3%，年終獎金 18%）。擴展期：HR Ratio 範圍 50%-60%，總獎金 30%（季獎金 4%，年終獎金 14%）。規模期：HR Ratio 範圍 45%-55%，總獎金 30%（季獎金 3%，年終獎金 18%）。不同階段，獎金結構不一樣，但「獎金總體約佔人事成本 30%」這件事是共通設計。"
+      }
+    ]
+  }
+}

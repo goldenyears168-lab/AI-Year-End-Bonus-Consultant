@@ -61,14 +61,18 @@ def call_gemini_logic(system_prompt, user_message, history=[], model="gemini-2.0
             )
         )
         
-        # 建立聊天會話
-        chat = model_instance.start_chat(history=[])
-        
-        # 加入歷史對話（按順序發送用戶訊息，Gemini 會自動管理對話歷史）
+        # 建立聊天會話，直接使用歷史對話
+        # Gemini API 的 history 格式需要是 List[Dict] 其中 role 為 "user" 或 "model"
+        gemini_history = []
         for msg in history:
-            if msg.get("role") == "user":
-                chat.send_message(msg.get("content", ""))
-            # 注意：助手回應會自動記錄在 ChatSession 中，不需要手動加入
+            role = msg.get("role", "")
+            content = msg.get("content", "")
+            if role == "user":
+                gemini_history.append({"role": "user", "parts": [content]})
+            elif role == "assistant":
+                gemini_history.append({"role": "model", "parts": [content]})
+        
+        chat = model_instance.start_chat(history=gemini_history)
         
         # 發送當前用戶訊息並取得回應
         response = chat.send_message(user_message)
