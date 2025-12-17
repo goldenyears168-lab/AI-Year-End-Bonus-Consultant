@@ -51,7 +51,7 @@ class AdvisorNode(BaseNode):
                 context["ai_response"] = (
                     "我是 WinLeaders-Bonus 年終獎金顧問。"
                     "我可以協助你制定年終獎金策略、評估風險、以及把獎金發放邏輯講清楚。"
-                    "你可以先告訴我：公司淨利/員工數/平均月薪/想走留才或激勵，我再給你建議。"
+                    "下一步你可以直接貼上公司報告（stage/revenue/grossMargin/hrRatio/bonus pool/部門分配/增長引擎），我會用同一套框架幫你做策略判斷與可執行建議。"
                 )
                 context["system_prompt"] = "local_intro_fallback"
                 return context
@@ -110,12 +110,13 @@ class AdvisorNode(BaseNode):
             required_markers = [
                 "### What I heard",
                 "### Better output (options)",
-                "### Suggested next question",
+                "### Next step (no questions)",
             ]
             if not all(m in (response or "") for m in required_markers):
                 strict_prompt = (
                     "你上一輪沒有依規定格式輸出。這一輪必須嚴格遵守輸出格式，"
-                    "並且一定要包含三個標題：### What I heard / ### Better output (options) / ### Suggested next question。\n\n"
+                    "並且一定要包含三個標題：### What I heard / ### Better output (options) / ### Next step (no questions)。\n"
+                    "注意：不要問用戶問題、不要請對方提供資料、不要用「請問/能否」等句型。\n\n"
                     + system_prompt
                 )
                 response = call_gemini_logic(strict_prompt, user_msg, history)
