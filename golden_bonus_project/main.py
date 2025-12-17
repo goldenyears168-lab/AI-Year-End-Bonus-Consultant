@@ -49,8 +49,6 @@ with st.sidebar:
 
     if st.session_state.company_context_text:
         st.caption("已載入（後續提問會自動套用）")
-        with st.expander("查看目前補充資訊", expanded=False):
-            st.code(st.session_state.company_context_text)
         if st.button("清除補充資訊", use_container_width=True):
             st.session_state.company_context_text = ""
             st.rerun()
@@ -85,9 +83,6 @@ if prompt := st.chat_input("請輸入您的問題或是貼上參考資訊... (�
     # A) 若使用者貼的是公司補充資訊：先儲存，避免立刻進入顧問回覆
     if looks_like_company_report_payload(prompt):
         st.session_state.company_context_text = prompt
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        with st.chat_message("user"):
-            st.markdown(prompt)
         receipt_msg = "已收到企業補充資訊，後續提問將以此作為背景資料。以下先提供一段依知識庫框架的原理解讀。"
         with st.chat_message("assistant", avatar="🤖"):
             st.markdown(receipt_msg)
