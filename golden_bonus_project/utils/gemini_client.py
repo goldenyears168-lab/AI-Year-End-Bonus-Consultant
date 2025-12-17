@@ -1,11 +1,39 @@
 # utils/gemini_client.py
-import google.generativeai as genai
 import os
-from dotenv import load_dotenv
-import streamlit as st
+try:
+    import streamlit as st  # type: ignore
+except ModuleNotFoundError:  # pragma: no cover
+    st = None  # 允許在非 Streamlit 環境下 import（例如測試或部分 CI）
 
 # 自動判斷是本地開發還是雲端
-load_dotenv()
+try:
+    from dotenv import load_dotenv  # type: ignore
+    load_dotenv()
+except ModuleNotFoundError:
+    # dotenv 不是必需：雲端用 st.secrets，本地也可能直接用環境變數
+    pass
+
+def get_api_key_source() -> str | None:
+    """
+    回傳 API Key 來源，不回傳 key 本身：
+    - "streamlit_secrets"
+    - "env"
+    - None
+    """
+    # Streamlit Secrets（雲端）
+    try:
+        if st is not None and hasattr(st, 'secrets') and st.secrets:
+            api_key = st.secrets.get("GEMINI_API_KEY", "")
+            if api_key:
+                return "streamlit_secrets"
+    except Exception:
+        pass
+
+    # 環境變數（本地）
+    if os.getenv("GEMINI_API_KEY", ""):
+        return "env"
+
+    return None
 
 def get_api_key():
     """
@@ -13,7 +41,7 @@ def get_api_key():
     """
     # 優先使用 Streamlit Secrets（適用於 Streamlit Cloud）
     try:
-        if hasattr(st, 'secrets') and st.secrets:
+        if st is not None and hasattr(st, 'secrets') and st.secrets:
             api_key = st.secrets.get("GEMINI_API_KEY", "")
             if api_key:
                 return api_key
@@ -27,6 +55,27 @@ def get_api_key():
     
     # 如果都找不到，返回 None
     return None
+
+def test_gemini_connection(model: str = "gemini-2.0-flash-exp") -> tuple[bool, str]:
+    """
+    最小連線測試：不回傳敏感資訊，只回報是否成功與原因。
+    """
+    api_key = get_api_key()
+    if not api_key:
+        return (False, "未找到 GEMINI_API_KEY（請檢查 Streamlit Secrets 或環境變數）")
+
+    try:
+        import google.generativeai as genai
+        genai.configure(api_key=api_key)
+        model_instance = genai.GenerativeModel(model_name=model)
+        resp = model_instance.generate_content("ping")
+        if getattr(resp, "text", None):
+            return (True, "Gemini 回應正常")
+        return (True, "Gemini 呼叫成功，但回應內容為空（可能被安全策略或配額限制影響）")
+    except ModuleNotFoundError as e:
+        return (False, f"缺少相依套件：{str(e)}（請先安裝 requirements.txt）")
+    except Exception as e:
+        return (False, f"Gemini 呼叫失敗：{str(e)}")
 
 def call_gemini_logic(system_prompt, user_message, history=[], model="gemini-2.0-flash-exp", temperature=0.7, max_tokens=2000):
     """
@@ -49,6 +98,7 @@ def call_gemini_logic(system_prompt, user_message, history=[], model="gemini-2.0
         return "⚠️ 錯誤：未找到 GEMINI_API_KEY。請檢查 Streamlit Secrets 或 .env 檔案。"
     
     try:
+        import google.generativeai as genai
         # 每次調用時重新配置（確保使用最新的 API Key）
         genai.configure(api_key=api_key)
         # 使用 system_instruction 參數設定系統提示詞
@@ -78,6 +128,8 @@ def call_gemini_logic(system_prompt, user_message, history=[], model="gemini-2.0
         response = chat.send_message(user_message)
         return response.text
         
+    except ModuleNotFoundError as e:
+        return f"⚠️ AI 連線錯誤: 缺少相依套件（{str(e)}）。請先安裝 requirements.txt。"
     except Exception as e:
         return f"⚠️ AI 連線錯誤: {str(e)}"
 

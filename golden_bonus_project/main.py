@@ -8,6 +8,24 @@ from config.settings import PAGE_TITLE, PAGE_HEADER
 st.set_page_config(page_title=PAGE_TITLE, layout="wide")
 st.title(PAGE_HEADER)
 
+# 側邊欄：AI 連線狀態（不顯示敏感資訊）
+with st.sidebar:
+    st.markdown("### 🔌 AI 連線狀態")
+    try:
+        from utils.gemini_client import get_api_key_source, test_gemini_connection
+
+        key_source = get_api_key_source()
+        st.caption(f"Key 來源：{key_source or '未設定'}")
+
+        if st.button("測試 Gemini 連線", use_container_width=True):
+            ok, msg = test_gemini_connection()
+            if ok:
+                st.success(msg)
+            else:
+                st.error(msg)
+    except Exception as e:
+        st.warning(f"無法載入連線檢查：{str(e)}")
+
 # 2. 狀態初始化
 if "messages" not in st.session_state:
     st.session_state.messages = []  # 用來存對話歷史
