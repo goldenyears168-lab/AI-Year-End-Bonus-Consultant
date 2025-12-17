@@ -27,6 +27,15 @@ class AdvisorNode(BaseNode):
                 )
                 context["system_prompt"] = "local_intro_fallback"
                 return context
+
+            # 若是「覺得太少/不滿意/想更詳細」等 follow-up 型問題，改用 followup 模板產出更顧問式內容
+            followup_triggers = [
+                "不滿意", "太少", "不夠", "更詳細", "詳細說明", "詳細解釋",
+                "說明一下", "再多一點", "具體一點", "更具體", "怎麼調整",
+                "為什麼", "原因", "取捨", "方案",
+            ]
+            if any(t in q_norm for t in followup_triggers):
+                intent = "CHAT_FOLLOWUP"
         
         if intent == "GENERATE_REPORT":
             # 使用配置中心的提示詞模板
