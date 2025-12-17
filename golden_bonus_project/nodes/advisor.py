@@ -42,6 +42,17 @@ def _contains_questions(text: str) -> bool:
     markers = ["？", "?", "請問", "能否", "可以提供", "可否", "方便提供"]
     return any(m in t for m in markers)
 
+def _looks_like_report_payload(text: str) -> bool:
+    """
+    嚴格判斷：只有當輸入明顯是 report/結構化貼文時才進入「原理解讀模式」。
+    """
+    t = (text or "").lower()
+    # 嚴格：至少同時出現 report 與 company/financials 其中一個
+    has_report = "report" in t
+    has_company = "company" in t
+    has_financials = "financials" in t
+    return has_report and (has_company or has_financials)
+
 def _remove_questions(text: str) -> str:
     """
     最小保守修正：移除含問句標點的行，並把常見反問句型替換成「下一步建議」陳述句。
@@ -65,6 +76,22 @@ def _remove_questions(text: str) -> str:
     cleaned = cleaned.replace("可以提供", "下一步建議：提供")
     cleaned = cleaned.replace("方便提供", "下一步建議：提供")
     return cleaned
+
+def _strip_internal_refs(text: str) -> str:
+    """
+    保底清理：移除知識庫內部代碼（C_XXXX / R_XXXX 等）。
+    """
+    if not text:
+        return text
+
+    lines = text.splitlines()
+    out: list[str] = []
+    for line in lines:
+        if "C_" in line or "R_" in line:
+            # 移除包含內部代碼的整行（避免露出 chunk id/規則代碼）
+            continue
+        out.append(line)
+    return "\n".join(out).strip()
 
 class AdvisorNode(BaseNode):
     def execute(self, context: Dict[str, Any]) -> Dict[str, Any]:
@@ -98,6 +125,10 @@ class AdvisorNode(BaseNode):
             ]
             if any(t in q_norm for t in followup_triggers):
                 intent = "CHAT_FOLLOWUP"
+
+            # 若使用者貼的是 report 結構化資料，走「原理解讀」模式
+            if _looks_like_report_payload(latest_q):
+                intent = "CHAT_FOLLOWUP"
         
         if intent == "GENERATE_REPORT":
             # 使用配置中心的提示詞模板
@@ -128,8 +159,8 @@ class AdvisorNode(BaseNode):
             user_msg = context.get("latest_user_question", "")
         
         elif intent == "CHAT":
-            # 純對話模式，只使用知識庫
-            system_prompt = PROMPT_TEMPLATES["chat"].format(
+            # 純對話模式：走顧問建議模板（仍不反問、不用問號）
+            system_prompt = PROMPT_TEMPLATES.get("chat_advice", PROMPT_TEMPLATES["chat"]).format(
                 knowledge_base=BONUS_KB_TEXT
             )
             user_msg = context.get("latest_user_question", "")
@@ -155,21 +186,25 @@ class AdvisorNode(BaseNode):
         # Guardrail：followup 模式必須輸出三段式；若模型沒照做，追加更嚴格指令後 retry 一次
         if intent == "CHAT_FOLLOWUP":
             required_markers = [
-                "### What I heard",
-                "### Better output (options)",
-                "### Next step (no questions)",
+                "### 原理總覽",
+                "### 這份報告如何推導",
+                "### 如何解讀這份結果",
+                "### 還可以回答的問題",
             ]
             if not all(m in (response or "") for m in required_markers):
                 strict_prompt = (
                     "你上一輪沒有依規定格式輸出。這一輪必須嚴格遵守輸出格式，"
-                    "並且一定要包含三個標題：### What I heard / ### Better output (options) / ### Next step (no questions)。\n"
-                    "注意：不要問用戶問題、不要請對方提供資料、不要用「請問/能否」等句型。\n\n"
+                    "並且一定要包含四個標題：### 原理總覽 / ### 這份報告如何推導 / ### 如何解讀這份結果 / ### 還可以回答的問題。\n"
+                    "注意：只做原理解說，不要給建議；不要問用戶問題；不要輸出任何 C_/R_ 代碼或公式。\n\n"
                     + system_prompt
                 )
                 response = call_gemini_logic(strict_prompt, user_msg, history)
                 context["system_prompt"] = strict_prompt
                 if _contains_questions(response):
                     response = _remove_questions(response)
+
+        # 最終保底：任何模式都不露出內部代碼；原理解讀模式也保持不反問
+        response = _strip_internal_refs(response)
 
         # 若看起來超出知識庫/專業高風險領域：先保留既有回答，再補上「建議諮詢真人」提示
         need_escalation, escalation_note = _needs_human_escalation(latest_q, response)
