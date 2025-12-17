@@ -4,6 +4,34 @@ from config.settings import PROMPT_TEMPLATES  # 從配置中心讀取提示詞�
 from assets.knowledge import BONUS_KB_TEXT
 from typing import Dict, Any
 
+def _needs_human_escalation(question: str, response: str) -> tuple[bool, str]:
+    """
+    最小保守判斷：若問題可能涉及法規/稅務/勞資等高風險領域，或模型回覆明顯拒答/空泛，
+    則建議諮詢真人專業顧問。回傳 (是否需要, 建議諮詢方向文字)。
+    """
+    q = (question or "").replace(" ", "")
+    r = (response or "")
+
+    # 1) 明顯拒答/空泛
+    refusal_markers = [
+        "抱歉，我無法回答", "我無法回答", "不能回答", "無法提供", "我不知道",
+        "無法判斷", "不確定", "資訊不足", "超出我的範圍",
+    ]
+    if any(m in r for m in refusal_markers):
+        return (True, "目前回覆有限，建議補充資訊或諮詢真人專業以避免誤判。")
+
+    # 2) 高風險/專業領域關鍵字（先回答能回答的，再建議詢問）
+    pro_keywords = {
+        "law_hr": ["勞基法", "勞資", "解雇", "資遣", "加班", "工時", "特休", "最低工資", "勞健保", "勞退"],
+        "tax_accounting": ["稅", "扣繳", "申報", "所得稅", "營所稅", "二代健保", "費用化", "分錄", "審計", "財報"],
+        "legal": ["契約", "合約", "法務", "訴訟", "違法", "合規"],
+        "comp": ["薪酬制度", "股票", "期權", "ESOP", "分紅", "獎酬"],
+    }
+    if any(k in q for ks in pro_keywords.values() for k in ks):
+        return (True, "此題牽涉法規/稅務/勞資或薪酬制度細節，建議由真人專業顧問確認。")
+
+    return (False, "")
+
 class AdvisorNode(BaseNode):
     def execute(self, context: Dict[str, Any]) -> Dict[str, Any]:
         intent = context.get("current_intent", "CHAT")
@@ -31,7 +59,7 @@ class AdvisorNode(BaseNode):
             # 若是「覺得太少/不滿意/想更詳細」等 follow-up 型問題，改用 followup 模板產出更顧問式內容
             followup_triggers = [
                 "不滿意", "太少", "不夠", "更詳細", "詳細說明", "詳細解釋",
-                "說明一下", "再多一點", "具體一點", "更具體", "怎麼調整",
+                "說明一下", "再多一點", "多一點", "具體一點", "更具體", "怎麼調整",
                 "為什麼", "原因", "取捨", "方案",
             ]
             if any(t in q_norm for t in followup_triggers):
@@ -76,9 +104,38 @@ class AdvisorNode(BaseNode):
         from utils.gemini_client import call_gemini_logic
         history = context.get("history", [])
         response = call_gemini_logic(system_prompt, user_msg, history)
+
+        # Guardrail：followup 模式必須輸出三段式；若模型沒照做，追加更嚴格指令後 retry 一次
+        if intent == "CHAT_FOLLOWUP":
+            required_markers = [
+                "### What I heard",
+                "### Better output (options)",
+                "### Suggested next question",
+            ]
+            if not all(m in (response or "") for m in required_markers):
+                strict_prompt = (
+                    "你上一輪沒有依規定格式輸出。這一輪必須嚴格遵守輸出格式，"
+                    "並且一定要包含三個標題：### What I heard / ### Better output (options) / ### Suggested next question。\n\n"
+                    + system_prompt
+                )
+                response = call_gemini_logic(strict_prompt, user_msg, history)
+                context["system_prompt"] = strict_prompt
+
+        # 若看起來超出知識庫/專業高風險領域：先保留既有回答，再補上「建議諮詢真人」提示
+        need_escalation, escalation_note = _needs_human_escalation(latest_q, response)
+        if need_escalation:
+            response = (
+                (response or "").rstrip()
+                + "\n\n"
+                + "### 建議諮詢真人專業\n"
+                + f"- {escalation_note}\n"
+                + "- 若涉及稅務/扣繳/費用化：建議詢問會計師或稅務顧問（帶上薪資結構、獎金發放規則、員工清冊）。\n"
+                + "- 若涉及勞資/工時/加班/勞退勞健保：建議詢問勞資顧問或律師（帶上勞動契約、出勤/加班制度、薪資項目）。\n"
+                + "- 若涉及制度設計與留才：建議詢問薪酬顧問（帶上績效制度、職等/職族、過往流動率與關鍵人才名單）。\n"
+            )
         
         context["ai_response"] = response
-        context["system_prompt"] = system_prompt
+        context.setdefault("system_prompt", system_prompt)
         
         return context
 
