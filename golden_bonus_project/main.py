@@ -54,7 +54,7 @@ for message in st.session_state.messages:
         st.markdown(message["content"])
 
 # 處理用戶輸入
-if prompt := st.chat_input("請輸入您的問題... (例如：年終獎金應該如何分配？)"):
+if prompt := st.chat_input("請輸入您的問題或是貼上參考資訊... (例如：公司報告、問卷結果、討論紀錄等)"):
     # 1. 將用戶訊息加入對話歷史
     st.session_state.messages.append({"role": "user", "content": prompt})
     

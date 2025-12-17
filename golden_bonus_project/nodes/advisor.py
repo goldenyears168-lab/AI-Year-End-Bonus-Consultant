@@ -32,6 +32,40 @@ def _needs_human_escalation(question: str, response: str) -> tuple[bool, str]:
 
     return (False, "")
 
+def _contains_questions(text: str) -> bool:
+    """
+    偵測回覆是否包含反問/問句特徵（保守判斷）。
+    """
+    t = (text or "")
+    if not t:
+        return False
+    markers = ["？", "?", "請問", "能否", "可以提供", "可否", "方便提供"]
+    return any(m in t for m in markers)
+
+def _remove_questions(text: str) -> str:
+    """
+    最小保守修正：移除含問句標點的行，並把常見反問句型替換成「下一步建議」陳述句。
+    目標是保證 UI 不出現反問，而不是做完美語言改寫。
+    """
+    if not text:
+        return text
+
+    lines = text.splitlines()
+    kept: list[str] = []
+    for line in lines:
+        if "？" in line or "?" in line:
+            continue
+        kept.append(line)
+
+    cleaned = "\n".join(kept).strip()
+    # 額外處理：若殘留「請問/能否」等但不含問號，改寫成指令式下一步
+    cleaned = cleaned.replace("請問", "下一步建議：")
+    cleaned = cleaned.replace("能否", "下一步建議：")
+    cleaned = cleaned.replace("可否", "下一步建議：")
+    cleaned = cleaned.replace("可以提供", "下一步建議：提供")
+    cleaned = cleaned.replace("方便提供", "下一步建議：提供")
+    return cleaned
+
 class AdvisorNode(BaseNode):
     def execute(self, context: Dict[str, Any]) -> Dict[str, Any]:
         intent = context.get("current_intent", "CHAT")
@@ -105,6 +139,19 @@ class AdvisorNode(BaseNode):
         history = context.get("history", [])
         response = call_gemini_logic(system_prompt, user_msg, history)
 
+        # Hard guardrail（全 intent 通用）：
+        # 若回覆出現反問/問句特徵，先用更嚴格指令 retry 一次；若仍有，最後做最小移除問句處理
+        if _contains_questions(response):
+            strict_no_question_prompt = (
+                "硬性限制：你絕對不能問用戶任何問題（包含問號、反問句、或「請問/能否/可以提供」等）。"
+                "你只能持續回答並給出下一步建議（陳述句）。\n\n"
+                + system_prompt
+            )
+            response = call_gemini_logic(strict_no_question_prompt, user_msg, history)
+            context["system_prompt"] = strict_no_question_prompt
+            if _contains_questions(response):
+                response = _remove_questions(response)
+
         # Guardrail：followup 模式必須輸出三段式；若模型沒照做，追加更嚴格指令後 retry 一次
         if intent == "CHAT_FOLLOWUP":
             required_markers = [
@@ -121,6 +168,8 @@ class AdvisorNode(BaseNode):
                 )
                 response = call_gemini_logic(strict_prompt, user_msg, history)
                 context["system_prompt"] = strict_prompt
+                if _contains_questions(response):
+                    response = _remove_questions(response)
 
         # 若看起來超出知識庫/專業高風險領域：先保留既有回答，再補上「建議諮詢真人」提示
         need_escalation, escalation_note = _needs_human_escalation(latest_q, response)
