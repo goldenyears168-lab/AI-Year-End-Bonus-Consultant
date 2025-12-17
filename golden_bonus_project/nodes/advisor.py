@@ -44,14 +44,22 @@ def _contains_questions(text: str) -> bool:
 
 def _looks_like_report_payload(text: str) -> bool:
     """
-    嚴格判斷：只有當輸入明顯是 report/結構化貼文時才進入「原理解讀模式」。
+    嚴格判斷：只有當輸入明顯是「結構化公司資料貼文」時才進入「原理解讀模式」。
+    注意：使用者可能不會帶 report: 開頭，可能直接從 company:/financials: 開始。
     """
     t = (text or "").lower()
-    # 嚴格：至少同時出現 report 與 company/financials 其中一個
-    has_report = "report" in t
-    has_company = "company" in t
-    has_financials = "financials" in t
-    return has_report and (has_company or has_financials)
+    # 嚴格：至少出現 company: 且同時出現 1 個以上常見區塊（financials/bonus/departments/growthEngine/warnings/recommendations）
+    has_company_block = "company" in t
+    other_blocks = [
+        "financials",
+        "bonus",
+        "departments",
+        "growthengine",
+        "warnings",
+        "recommendations",
+    ]
+    has_any_other = any(b in t for b in other_blocks)
+    return has_company_block and has_any_other
 
 def _remove_questions(text: str) -> str:
     """
@@ -99,6 +107,10 @@ class AdvisorNode(BaseNode):
         user_data = context.get("user_input", {})
         metrics = context.get("metrics", {})
         risks = "\n".join(context.get("risks", []))
+        company_context_text = (context.get("company_context_text") or "").strip()
+        company_context_block = ""
+        if company_context_text:
+            company_context_block = f"\n\n【企業補充資訊】\n{company_context_text}\n"
 
         # 針對「自我介紹/怎麼用」類問題做保守處理：避免被模型安全策略誤判而拒答
         latest_q = (context.get("latest_user_question") or "").strip()
@@ -140,7 +152,7 @@ class AdvisorNode(BaseNode):
                 per_head=metrics.get('per_head', 'N/A'),
                 months=metrics.get('months', 'N/A'),
                 risks=risks if risks else "無"
-            )
+            ) + company_context_block
             user_msg = "請根據上述數據，生成一份完整的年終獎金分配草案。"
         
         elif intent == "CHAT_FOLLOWUP":
@@ -155,14 +167,14 @@ class AdvisorNode(BaseNode):
                 per_head=metrics.get('per_head', 'N/A'),
                 months=metrics.get('months', 'N/A'),
                 risks=risks if risks else "無"
-            )
+            ) + company_context_block
             user_msg = context.get("latest_user_question", "")
         
         elif intent == "CHAT":
             # 純對話模式：走顧問建議模板（仍不反問、不用問號）
             system_prompt = PROMPT_TEMPLATES.get("chat_advice", PROMPT_TEMPLATES["chat"]).format(
                 knowledge_base=BONUS_KB_TEXT
-            )
+            ) + company_context_block
             user_msg = context.get("latest_user_question", "")
         
         # 呼叫 Gemini API

@@ -4,6 +4,17 @@ from nodes.advisor import AdvisorNode
 from core.pipeline import Pipeline
 from config.settings import PAGE_TITLE, PAGE_HEADER, PIPELINE_CACHE_VERSION
 
+def looks_like_company_report_payload(text: str) -> bool:
+    """
+    判斷使用者是否貼上「結構化公司補充資訊」。
+    嚴格但不依賴 report: 開頭：只要包含 company: 且同時包含其他常見區塊即可。
+    """
+    t = (text or "").lower()
+    if "company" not in t:
+        return False
+    blocks = ["financials", "bonus", "departments", "growthengine", "warnings", "recommendations"]
+    return any(b in t for b in blocks)
+
 # 1. 頁面設定
 st.set_page_config(page_title=PAGE_TITLE, layout="wide")
 st.title(PAGE_HEADER)
@@ -30,6 +41,22 @@ with st.sidebar:
     except Exception as e:
         st.warning(f"無法載入連線檢查：{str(e)}")
 
+# 側邊欄：企業補充資訊（用於後續提問的上下文）
+with st.sidebar:
+    st.markdown("### 🧾 企業補充資訊")
+    if "company_context_text" not in st.session_state:
+        st.session_state.company_context_text = ""
+
+    if st.session_state.company_context_text:
+        st.caption("已載入（後續提問會自動套用）")
+        with st.expander("查看目前補充資訊", expanded=False):
+            st.code(st.session_state.company_context_text)
+        if st.button("清除補充資訊", use_container_width=True):
+            st.session_state.company_context_text = ""
+            st.rerun()
+    else:
+        st.caption("尚未貼上")
+
 # 2. 狀態初始化
 if "messages" not in st.session_state:
     st.session_state.messages = []  # 用來存對話歷史
@@ -55,6 +82,17 @@ for message in st.session_state.messages:
 
 # 處理用戶輸入
 if prompt := st.chat_input("請輸入您的問題或是貼上參考資訊... (例如：公司報告、問卷結果、討論紀錄等)"):
+    # A) 若使用者貼的是公司補充資訊：先儲存，避免立刻進入顧問回覆
+    if looks_like_company_report_payload(prompt):
+        st.session_state.company_context_text = prompt
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        with st.chat_message("user"):
+            st.markdown(prompt)
+        with st.chat_message("assistant", avatar="🤖"):
+            st.markdown("已收到企業補充資訊，後續提問將以此作為背景資料。")
+        st.session_state.messages.append({"role": "assistant", "content": "已收到企業補充資訊，後續提問將以此作為背景資料。"})
+        st.stop()
+
     # 1. 將用戶訊息加入對話歷史
     st.session_state.messages.append({"role": "user", "content": prompt})
     
@@ -66,6 +104,7 @@ if prompt := st.chat_input("請輸入您的問題或是貼上參考資訊... (�
     chat_context = {
         "current_intent": "CHAT",
         "latest_user_question": prompt,
+        "company_context_text": st.session_state.get("company_context_text", ""),
         "history": [
             {"role": msg["role"], "content": msg["content"]}
             for msg in st.session_state.messages[:-1]  # 排除最後一條（剛加入的用戶訊息）
