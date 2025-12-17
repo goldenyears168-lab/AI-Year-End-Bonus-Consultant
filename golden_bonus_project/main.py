@@ -88,9 +88,32 @@ if prompt := st.chat_input("請輸入您的問題或是貼上參考資訊... (�
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
+        receipt_msg = "已收到企業補充資訊，後續提問將以此作為背景資料。以下先提供一段依知識庫框架的原理解讀。"
         with st.chat_message("assistant", avatar="🤖"):
-            st.markdown("已收到企業補充資訊，後續提問將以此作為背景資料。")
-        st.session_state.messages.append({"role": "assistant", "content": "已收到企業補充資訊，後續提問將以此作為背景資料。"})
+            st.markdown(receipt_msg)
+        st.session_state.messages.append({"role": "assistant", "content": receipt_msg})
+
+        # 立即輸出回饋：用「原理解讀模式」解說補充資訊（不需使用者再問一次）
+        auto_context = {
+            "current_intent": "CHAT_FOLLOWUP",
+            "latest_user_question": "請用知識庫框架解說這份企業補充資訊的推導與解讀，全中文，不要給建議，不要反問。",
+            "company_context_text": st.session_state.company_context_text,
+            "history": [
+                {"role": msg["role"], "content": msg["content"]}
+                for msg in st.session_state.messages
+            ],
+        }
+        with st.chat_message("assistant", avatar="🤖"):
+            with st.spinner("AI 思考中..."):
+                try:
+                    result_context = pipeline.run(auto_context)
+                    ai_response = result_context.get("ai_response", "（已收到補充資訊，但暫時無法生成解說內容）")
+                    st.markdown(ai_response)
+                    st.session_state.messages.append({"role": "assistant", "content": ai_response})
+                except Exception as e:
+                    error_msg = f"⚠️ 系統錯誤：{str(e)}"
+                    st.error(error_msg)
+                    st.session_state.messages.append({"role": "assistant", "content": error_msg})
         st.stop()
 
     # 1. 將用戶訊息加入對話歷史

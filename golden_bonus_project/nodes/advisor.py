@@ -141,6 +141,12 @@ class AdvisorNode(BaseNode):
             # 若使用者貼的是 report 結構化資料，走「原理解讀」模式
             if _looks_like_report_payload(latest_q):
                 intent = "CHAT_FOLLOWUP"
+
+            # 若已載入企業補充資訊，且使用者在問「解說/原理/解讀」類問題，優先走原理解讀模式
+            if company_context_text:
+                explain_triggers = ["解說", "原理", "解讀", "推導", "介紹", "怎麼看", "如何看"]
+                if any(t in q_norm for t in explain_triggers):
+                    intent = "CHAT_FOLLOWUP"
         
         if intent == "GENERATE_REPORT":
             # 使用配置中心的提示詞模板
