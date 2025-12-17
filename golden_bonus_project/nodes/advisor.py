@@ -10,6 +10,23 @@ class AdvisorNode(BaseNode):
         user_data = context.get("user_input", {})
         metrics = context.get("metrics", {})
         risks = "\n".join(context.get("risks", []))
+
+        # 針對「自我介紹/怎麼用」類問題做保守處理：避免被模型安全策略誤判而拒答
+        latest_q = (context.get("latest_user_question") or "").strip()
+        if intent == "CHAT" and latest_q:
+            q_norm = latest_q.replace(" ", "")
+            intro_triggers = [
+                "你是誰", "你是什麼", "你能做什麼", "你可以做什麼",
+                "怎麼用", "如何使用", "使用方法", "你會什麼",
+            ]
+            if any(t in q_norm for t in intro_triggers):
+                context["ai_response"] = (
+                    "我是 WinLeaders-Bonus 年終獎金顧問。"
+                    "我可以協助你制定年終獎金策略、評估風險、以及把獎金發放邏輯講清楚。"
+                    "你可以先告訴我：公司淨利/員工數/平均月薪/想走留才或激勵，我再給你建議。"
+                )
+                context["system_prompt"] = "local_intro_fallback"
+                return context
         
         if intent == "GENERATE_REPORT":
             # 使用配置中心的提示詞模板

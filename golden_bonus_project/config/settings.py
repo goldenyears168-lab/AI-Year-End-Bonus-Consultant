@@ -187,3 +187,6 @@ BUTTON_LABELS = {
 PAGE_TITLE = "WinLeaders-Bonus AI"
 PAGE_HEADER = "🤖 WinLeaders-Bonus 年終獎金顧問"
 
+# Streamlit cache busting：若你更新了節點邏輯但雲端仍吃到舊快取，可調整此值強制重建 Pipeline
+PIPELINE_CACHE_VERSION = "v1"
+

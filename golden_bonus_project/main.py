@@ -2,7 +2,7 @@
 import streamlit as st
 from nodes.advisor import AdvisorNode
 from core.pipeline import Pipeline
-from config.settings import PAGE_TITLE, PAGE_HEADER
+from config.settings import PAGE_TITLE, PAGE_HEADER, PIPELINE_CACHE_VERSION
 
 # 1. 頁面設定
 st.set_page_config(page_title=PAGE_TITLE, layout="wide")
@@ -23,6 +23,10 @@ with st.sidebar:
                 st.success(msg)
             else:
                 st.error(msg)
+
+        if st.button("清除快取 / 重建 Pipeline", use_container_width=True):
+            st.cache_resource.clear()
+            st.rerun()
     except Exception as e:
         st.warning(f"無法載入連線檢查：{str(e)}")
 
@@ -32,12 +36,12 @@ if "messages" not in st.session_state:
 
 # 3. 初始化 Pipeline（只包含 AdvisorNode）
 @st.cache_resource
-def get_pipeline():
+def get_pipeline(_cache_version: str):
     pipe = Pipeline()
     pipe.add_node(AdvisorNode("Advisor"))
     return pipe
 
-pipeline = get_pipeline()
+pipeline = get_pipeline(PIPELINE_CACHE_VERSION)
 
 # 4. 對話機器人介面
 st.markdown("---")
