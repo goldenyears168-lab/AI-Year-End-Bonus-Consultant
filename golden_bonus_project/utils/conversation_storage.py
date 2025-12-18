@@ -53,11 +53,12 @@ def get_supabase_client():
     獲取 Supabase 客戶端實例
     
     Returns:
-        supabase.Client 或 None（如果配置缺失）
+        supabase.Client 或 None（如果配置缺失或錯誤）
     """
     try:
         from supabase import create_client, Client
     except ImportError:
+        # Supabase 模組未安裝，返回 None（允許應用在沒有 Supabase 時運行）
         return None
     
     url, key = get_supabase_config()
@@ -67,7 +68,9 @@ def get_supabase_client():
     try:
         client: Client = create_client(url, key)
         return client
-    except Exception:
+    except Exception as e:
+        # 靜默失敗，不影響應用啟動
+        # 如果需要調試，可以在這裡記錄錯誤
         return None
 
 

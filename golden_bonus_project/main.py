@@ -87,12 +87,14 @@ if "conversations_loaded" not in st.session_state:
         from utils.conversation_storage import load_conversation_history
         session_id = st.session_state._session_id
         # 嘗試載入歷史對話（最多 50 條，用於顯示）
+        # 使用 try-except 確保即使 Supabase 未配置也不會影響應用啟動
         loaded_messages = load_conversation_history(session_id, limit=50)
-        if loaded_messages:
+        if loaded_messages and len(loaded_messages) > 0:
             st.session_state.messages = loaded_messages
         st.session_state.conversations_loaded = True
-    except Exception:
-        # 如果 Supabase 未配置或載入失敗，使用空列表
+    except Exception as e:
+        # 如果 Supabase 未配置或載入失敗，使用空列表，不影響應用啟動
+        # 在調試模式下可以輸出錯誤（但在生產環境中靜默失敗）
         st.session_state.conversations_loaded = True
 
 # 精實化：限制送進 LLM 的歷史訊息數量，避免 token 膨脹造成延遲與成本上升
