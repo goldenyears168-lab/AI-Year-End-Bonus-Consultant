@@ -1,4 +1,14 @@
 # main.py
+import sys
+import os
+from pathlib import Path
+
+# 確保可以導入同目錄下的模組（解決 Streamlit Cloud 部署時的導入問題）
+# 獲取當前文件所在目錄，並將其添加到 Python 路徑
+current_dir = Path(__file__).parent.absolute()
+if str(current_dir) not in sys.path:
+    sys.path.insert(0, str(current_dir))
+
 import streamlit as st
 from nodes.advisor import AdvisorNode
 from core.pipeline import Pipeline
