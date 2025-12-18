@@ -88,3 +88,4 @@ Python 版本: {sys.version}
 
 # 其餘代碼從 main.py 複製...（這裡只是示例，實際使用時需要複製完整的 main.py 內容）
 
+
