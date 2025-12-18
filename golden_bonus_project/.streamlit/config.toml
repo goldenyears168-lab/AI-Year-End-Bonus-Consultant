@@ -1,13 +1,18 @@
 [server]
-# 启用CORS以支持跨域请求
-enableCORS = false
+# 安全保守設定：保持 XSRF 防護開啟，同時避免 enableCORS=false 與 enableXsrfProtection=true 的衝突警告
 enableXsrfProtection = true
+enableCORS = true
+
+# 本地啟動預設（仍可被 CLI 參數覆寫）
+headless = true
+address = "127.0.0.1"
+port = 8502
 
 [browser]
 # 浏览器相关设置
 gatherUsageStats = false
 serverAddress = "localhost"
-serverPort = 8501
+serverPort = 8502
 
 [theme]
 # 主题设置（可选）

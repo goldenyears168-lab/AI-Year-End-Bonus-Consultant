@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>WinLeaders-Bonus 專案架構流程圖（Mermaid）</title>
+    <style>
+      :root {
+        --bg: #0b1020;
+        --panel: #111a33;
+        --text: #e9eefc;
+        --muted: #a9b4d0;
+        --border: rgba(255, 255, 255, 0.12);
+      }
+      body {
+        margin: 0;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial,
+          "Apple Color Emoji", "Segoe UI Emoji";
+        background: radial-gradient(1200px 700px at 20% 0%, #16224a 0%, var(--bg) 45%, #070a14 100%);
+        color: var(--text);
+      }
+      header {
+        padding: 18px 20px;
+        border-bottom: 1px solid var(--border);
+        background: linear-gradient(180deg, rgba(17, 26, 51, 0.85), rgba(17, 26, 51, 0.4));
+        position: sticky;
+        top: 0;
+        backdrop-filter: blur(10px);
+      }
+      h1 {
+        font-size: 16px;
+        margin: 0 0 6px 0;
+        letter-spacing: 0.2px;
+      }
+      p {
+        margin: 0;
+        font-size: 13px;
+        color: var(--muted);
+        line-height: 1.4;
+      }
+      main {
+        padding: 18px 20px 28px 20px;
+      }
+      .card {
+        background: rgba(17, 26, 51, 0.72);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 14px;
+        overflow: auto;
+      }
+      .hint {
+        margin-top: 10px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New",
+          monospace;
+        font-size: 12px;
+        color: #d7e0ff;
+      }
+      a {
+        color: #b7c8ff;
+      }
+      .mermaid {
+        min-width: 900px;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>WinLeaders-Bonus 專案架構流程圖（Mermaid）</h1>
+      <p>
+        打開本檔會自動渲染 Mermaid。若要輸出 SVG：可用瀏覽器印出/另存，或在 DevTools 取得渲染後的
+        <code>&lt;svg&gt;</code>。
+      </p>
+    </header>
+    <main>
+      <div class="card" style="margin-bottom: 14px">
+        <div class="mermaid">
+flowchart LR
+  A["使用者<br/>輸入問題 / 貼上公司補充資訊"] --> B["Streamlit 介面<br/>(main.py)"]
+
+  B --> C["顧問大腦（Advisor）<br/>整理上下文 + 選擇回覆模式"]
+  C --> D["Gemini（一次呼叫）<br/>產生回覆文字"]
+
+  D --> E["精實保底後處理<br/>- 移除內部代碼<br/>- 不反問（去問句）<br/>- followup 補齊四段式"]
+  E --> F["Streamlit 顯示<br/>把回覆寫回對話"]
+  F --> A
+
+  B -. "可選：企業補充資訊<br/>會一起帶進顧問上下文" .-> C
+        </div>
+      </div>
+      <div class="card">
+        <div class="mermaid">
+flowchart TD
+  %% ===================== UI / Entry =====================
+  subgraph UI["UI / Entry（Streamlit）"]
+    A["User（聊天輸入 / 貼上公司補充資訊）"]
+    B["main.py<br/>- st.chat_input<br/>- st.session_state.messages<br/>- st.sidebar（連線測試/清快取/補充資訊）"]
+    A --> B
+  end
+
+  %% ===================== Pipeline Core =====================
+  subgraph Core["Core（Pipeline）"]
+    P["core/pipeline.py<br/>Pipeline.run(context)"]
+    N["core/base_node.py<br/>BaseNode.execute(context)"]
+    B -->|"get_pipeline() / st.cache_resource"| P
+    P -->|"for node in nodes"| N
+  end
+
+  %% ===================== Nodes =====================
+  subgraph Nodes["Nodes（業務節點）"]
+    Adv["nodes/advisor.py<br/>AdvisorNode.execute(context)"]
+    Calc["nodes/calculator.py<br/>CalculatorNode.execute(context)<br/>(目前 main.py 未接入)"]
+    N --> Adv
+  end
+
+  %% ===================== Config & Knowledge =====================
+  subgraph Cfg["Config & Knowledge（提示詞/知識庫）"]
+    S["config/settings.py<br/>PROMPT_TEMPLATES / PAGE_* / PIPELINE_CACHE_VERSION"]
+    K["assets/knowledge.py<br/>BONUS_KB_TEXT"]
+    Adv -->|"讀取 templates"| S
+    Adv -->|"注入知識庫文本"| K
+  end
+
+  %% ===================== AI Client =====================
+  subgraph AI["AI Client（Gemini）"]
+    G["utils/gemini_client.py<br/>call_gemini_logic() / test_gemini_connection()"]
+    Key["Secrets/Env<br/>- st.secrets.GEMINI_API_KEY（雲端）<br/>- ENV GEMINI_API_KEY（本地）"]
+    Lib["google.generativeai<br/>GenerativeModel / start_chat / send_message"]
+    Adv -->|"呼叫"| G
+    G -->|"取 key（不回顯）"| Key
+    G -->|"API 呼叫"| Lib
+  end
+
+  %% ===================== Post-processing (Lean) =====================
+  subgraph PP["Post-processing（精實保底：不再 retry）"]
+    PP1["strip_internal_refs<br/>（移除 C_/R_ 等內部代碼）"]
+    PP2["remove_questions<br/>（移除問句行/反問）"]
+    PP3["ensure_followup_format<br/>（補齊四段式標題框架）"]
+    Lib -->|"單次回覆"| PP1
+    PP1 --> PP2
+    PP2 -->|"followup 才需要"| PP3
+  end
+
+  %% ===================== Data Flow =====================
+  subgraph Data["Data（Context 傳遞）"]
+    Ctx["context dict<br/>- current_intent<br/>- latest_user_question<br/>- company_context_text<br/>- history<br/>- ai_response / error"]
+  end
+
+  B -->|"組 chat_context / auto_context"| Ctx
+  Ctx -->|"Pipeline.run(context)"| P
+  Adv -->|"組 prompt + 單次呼叫 + 保底後處理"| Lib
+  PP2 -->|"寫回 ai_response"| Ctx
+  PP3 -->|"寫回 ai_response（followup）"| Ctx
+  P -->|"回傳 context（含錯誤保底）"| B
+  B -->|"st.markdown(ai_response) / st.error"| A
+        </div>
+      </div>
+      <div class="hint">
+        上方是「新手版（高階流程）」，下方是「工程版（對應模組/檔案）」。
+        提醒：目前 `main.py` 只註冊 `AdvisorNode`；若你之後把 <code>CalculatorNode</code> 串進 pipeline，
+        工程版圖上也可再加一條分支。
+      </div>
+    </main>
+
+    <!-- Mermaid (CDN). If you need offline rendering, tell me and I can switch to a vendored local mermaid build. -->
+    <script type="module">
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+      mermaid.initialize({
+        startOnLoad: true,
+        theme: "dark",
+        themeVariables: {
+          primaryColor: "#1d2a55",
+          primaryTextColor: "#e9eefc",
+          primaryBorderColor: "rgba(255,255,255,0.18)",
+          lineColor: "rgba(233,238,252,0.45)",
+          tertiaryColor: "#111a33",
+          fontFamily:
+            'ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"',
+        },
+        flowchart: {
+          curve: "basis",
+          htmlLabels: true,
+        },
+        securityLevel: "strict",
+      });
+    </script>
+  </body>
+</html>
+
+

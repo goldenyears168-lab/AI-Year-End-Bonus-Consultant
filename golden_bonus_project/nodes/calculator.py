@@ -5,6 +5,20 @@ from typing import Dict, Any
 class CalculatorNode(BaseNode):
     def execute(self, context: Dict[str, Any]) -> Dict[str, Any]:
         data = context["user_input"]
+
+        # retention 支援兩種格式（向後相容）：
+        # - retention_rate: 0.0 ~ 1.0
+        # - retention: 0 ~ 100（百分比）
+        if "retention_rate" in data:
+            retention_rate = float(data["retention_rate"])
+        elif "retention" in data:
+            retention_rate = float(data["retention"]) / 100.0
+        else:
+            raise KeyError("缺少 retention_rate 或 retention")
+
+        # 合理範圍校驗，避免算出負獎金池或超發
+        if not (0.0 <= retention_rate <= 1.0):
+            raise ValueError("保留比例必須介於 0.0 到 1.0（或 0 到 100%）")
         
         # 1. 安全檢查：避免除以零的錯誤 (Edge Case)
         if data["employees"] <= 0:
@@ -16,7 +30,7 @@ class CalculatorNode(BaseNode):
         # 獎金池 = 淨利 * (1 - 保留比例)
         # 注意：保留比例包含股東分潤與明年營運週轉金（簡化模型）
         # net_profit 單位是萬元，需要轉換為元
-        pool = (data["net_profit"] * 10000) * (1 - data["retention_rate"])
+        pool = (data["net_profit"] * 10000) * (1 - retention_rate)
         
         # 人均 = 獎金池 / 人數
         per_head = pool / data["employees"]
@@ -40,7 +54,7 @@ class CalculatorNode(BaseNode):
         
         # 規則 2: 發太多 (透支保留盈餘)
         # 假設我們不希望老闆保留盈餘低於 10%
-        if data["retention_rate"] < 0.1:
+        if retention_rate < 0.1:
             risks.append("⚠️ **財務警告**：您的保留盈餘過低，公司現金流抗風險能力將減弱。")
         
         context["risks"] = risks

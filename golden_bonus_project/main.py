@@ -34,6 +34,20 @@ with st.sidebar:
                 st.success(msg)
             else:
                 st.error(msg)
+        
+        # Supabase 連線測試
+        st.markdown("---")
+        st.markdown("### 💾 對話記錄")
+        try:
+            from utils.conversation_storage import test_supabase_connection
+            if st.button("測試 Supabase 連線", use_container_width=True):
+                ok, msg = test_supabase_connection()
+                if ok:
+                    st.success(msg)
+                else:
+                    st.error(msg)
+        except Exception as e:
+            st.warning(f"無法載入 Supabase 檢查：{str(e)}")
 
         if st.button("清除快取 / 重建 Pipeline", use_container_width=True):
             st.cache_resource.clear()
@@ -56,8 +70,33 @@ with st.sidebar:
         st.caption("尚未貼上")
 
 # 2. 狀態初始化
+# 生成或獲取穩定的 session_id（用於 Supabase 對話記錄）
+if "_session_id" not in st.session_state:
+    import hashlib
+    # 使用 session_state 的 id 和 Streamlit 的內部 session_id（如果可用）來生成唯一標識
+    # 注意：Streamlit 沒有直接暴露 session_id，我們使用一個穩定的替代方案
+    session_key = f"{id(st.session_state)}"
+    st.session_state._session_id = hashlib.md5(session_key.encode()).hexdigest()[:16]
+
 if "messages" not in st.session_state:
     st.session_state.messages = []  # 用來存對話歷史
+
+# 初始化 Supabase 對話記錄：從資料庫載入歷史對話
+if "conversations_loaded" not in st.session_state:
+    try:
+        from utils.conversation_storage import load_conversation_history
+        session_id = st.session_state._session_id
+        # 嘗試載入歷史對話（最多 50 條，用於顯示）
+        loaded_messages = load_conversation_history(session_id, limit=50)
+        if loaded_messages:
+            st.session_state.messages = loaded_messages
+        st.session_state.conversations_loaded = True
+    except Exception:
+        # 如果 Supabase 未配置或載入失敗，使用空列表
+        st.session_state.conversations_loaded = True
+
+# 精實化：限制送進 LLM 的歷史訊息數量，避免 token 膨脹造成延遲與成本上升
+MAX_HISTORY_MESSAGES = 10
 
 # 3. 初始化 Pipeline（只包含 AdvisorNode）
 @st.cache_resource
@@ -87,6 +126,14 @@ if prompt := st.chat_input("請輸入您的問題或是貼上參考資訊... (�
         with st.chat_message("assistant", avatar="🤖"):
             st.markdown(receipt_msg)
         st.session_state.messages.append({"role": "assistant", "content": receipt_msg})
+        
+        # 保存到 Supabase
+        try:
+            from utils.conversation_storage import save_conversation
+            session_id = st.session_state._session_id
+            save_conversation(session_id, "assistant", receipt_msg, {"intent": "company_info_receipt"})
+        except Exception:
+            pass  # 靜默失敗，不影響主流程
 
         # 立即輸出回饋：用「原理解讀模式」解說補充資訊（不需使用者再問一次）
         auto_context = {
@@ -105,14 +152,44 @@ if prompt := st.chat_input("請輸入您的問題或是貼上參考資訊... (�
                     ai_response = result_context.get("ai_response", "（已收到補充資訊，但暫時無法生成解說內容）")
                     st.markdown(ai_response)
                     st.session_state.messages.append({"role": "assistant", "content": ai_response})
+                    
+                    # 保存到 Supabase
+                    try:
+                        from utils.conversation_storage import save_conversation
+                        session_id = st.session_state._session_id
+                        save_conversation(session_id, "assistant", ai_response, {
+                            "intent": "CHAT_FOLLOWUP",
+                            "company_context": "present"
+                        })
+                    except Exception:
+                        pass  # 靜默失敗，不影響主流程
                 except Exception as e:
                     error_msg = f"⚠️ 系統錯誤：{str(e)}"
                     st.error(error_msg)
                     st.session_state.messages.append({"role": "assistant", "content": error_msg})
+                    
+                    # 保存錯誤訊息到 Supabase
+                    try:
+                        from utils.conversation_storage import save_conversation
+                        session_id = st.session_state._session_id
+                        save_conversation(session_id, "assistant", error_msg, {"error": True})
+                    except Exception:
+                        pass
         st.stop()
 
     # 1. 將用戶訊息加入對話歷史
     st.session_state.messages.append({"role": "user", "content": prompt})
+    
+    # 1.5. 保存用戶訊息到 Supabase
+    try:
+        from utils.conversation_storage import save_conversation
+        session_id = st.session_state._session_id
+        save_conversation(session_id, "user", prompt, {
+            "intent": "CHAT",
+            "company_context": "present" if st.session_state.get("company_context_text") else "absent"
+        })
+    except Exception:
+        pass  # 靜默失敗，不影響主流程
     
     # 2. 顯示用戶訊息
     with st.chat_message("user"):
@@ -125,7 +202,7 @@ if prompt := st.chat_input("請輸入您的問題或是貼上參考資訊... (�
         "company_context_text": st.session_state.get("company_context_text", ""),
         "history": [
             {"role": msg["role"], "content": msg["content"]}
-            for msg in st.session_state.messages[:-1]  # 排除最後一條（剛加入的用戶訊息）
+            for msg in st.session_state.messages[-(MAX_HISTORY_MESSAGES + 1):-1]  # 保留最近 N 則，排除最後一條（剛加入的用戶訊息）
         ]
     }
     
@@ -146,6 +223,17 @@ if prompt := st.chat_input("請輸入您的問題或是貼上參考資訊... (�
                     "content": ai_response
                 })
                 
+                # 7. 保存 AI 回應到 Supabase
+                try:
+                    from utils.conversation_storage import save_conversation
+                    session_id = st.session_state._session_id
+                    save_conversation(session_id, "assistant", ai_response, {
+                        "intent": chat_context.get("current_intent", "CHAT"),
+                        "company_context": "present" if chat_context.get("company_context_text") else "absent"
+                    })
+                except Exception:
+                    pass  # 靜默失敗，不影響主流程
+                
             except Exception as e:
                 error_msg = f"⚠️ 系統錯誤：{str(e)}"
                 st.error(error_msg)
@@ -153,3 +241,11 @@ if prompt := st.chat_input("請輸入您的問題或是貼上參考資訊... (�
                     "role": "assistant",
                     "content": error_msg
                 })
+                
+                # 保存錯誤訊息到 Supabase
+                try:
+                    from utils.conversation_storage import save_conversation
+                    session_id = st.session_state._session_id
+                    save_conversation(session_id, "assistant", error_msg, {"error": True})
+                except Exception:
+                    pass

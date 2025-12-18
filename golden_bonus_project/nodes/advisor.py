@@ -101,6 +101,51 @@ def _strip_internal_refs(text: str) -> str:
         out.append(line)
     return "\n".join(out).strip()
 
+def _ensure_followup_format(text: str) -> str:
+    """
+    最小保守保底：確保 followup 模式輸出包含四個標題：
+    ### 原理總覽 / ### 這份報告如何推導 / ### 如何解讀這份結果 / ### 還可以回答的問題
+
+    原則：不再額外呼叫模型；只在缺少標題時補上框架，避免 UI/使用者體感「格式不穩」。
+    """
+    if not text:
+        return (
+            "### 原理總覽\n（內容暫缺）\n\n"
+            "### 這份報告如何推導\n（內容暫缺）\n\n"
+            "### 如何解讀這份結果\n（內容暫缺）\n\n"
+            "### 還可以回答的問題\n"
+            "- 階段判斷的邏輯與門檻解讀\n"
+            "- HR Ratio 的意義、風險區間、以及為什麼只用於風險而不決定階段\n"
+            "- 增長引擎如何映射到部門權重（解讀分配理由）\n"
+        )
+
+    required_markers = [
+        "### 原理總覽",
+        "### 這份報告如何推導",
+        "### 如何解讀這份結果",
+        "### 還可以回答的問題",
+    ]
+    if all(m in text for m in required_markers):
+        return text
+
+    # 若模型沒有依格式輸出：用最小包裝補齊標題，並把原文放進「解讀」段落避免資訊流失
+    body = (text or "").strip()
+    return (
+        "### 原理總覽\n"
+        "這份回覆主要用「階段 / 用人成本風險 / 增長引擎與部門權重」三個概念，來解釋年終獎金的結構性取捨。\n\n"
+        "### 這份報告如何推導\n"
+        "- 階段判斷：用營收與毛利看養人能力與現金流承受度，決定偏向保留或激勵的框架位置。\n"
+        "- HR Ratio：用人事成本占毛利看用人成本風險，作為風險解讀而非直接決定階段。\n"
+        "- 增長引擎與權重：用增長方式映射到部門的相對權重，解釋資源傾斜的理由。\n\n"
+        "### 如何解讀這份結果\n"
+        f"{body}\n\n"
+        "### 還可以回答的問題\n"
+        "- 階段判斷的邏輯與門檻解讀\n"
+        "- HR Ratio 的意義、風險區間、以及為什麼只用於風險而不決定階段\n"
+        "- 獎金池為何在不同階段會偏向季度或年底（解讀結構而非建議）\n"
+        "- 增長引擎如何映射到部門權重（解讀分配理由）\n"
+    )
+
 class AdvisorNode(BaseNode):
     def execute(self, context: Dict[str, Any]) -> Dict[str, Any]:
         intent = context.get("current_intent", "CHAT")
@@ -188,41 +233,12 @@ class AdvisorNode(BaseNode):
         history = context.get("history", [])
         response = call_gemini_logic(system_prompt, user_msg, history)
 
-        # Hard guardrail（全 intent 通用）：
-        # 若回覆出現反問/問句特徵，先用更嚴格指令 retry 一次；若仍有，最後做最小移除問句處理
-        if _contains_questions(response):
-            strict_no_question_prompt = (
-                "硬性限制：你絕對不能問用戶任何問題（包含問號、反問句、或「請問/能否/可以提供」等）。"
-                "你只能持續回答並給出下一步建議（陳述句）。\n\n"
-                + system_prompt
-            )
-            response = call_gemini_logic(strict_no_question_prompt, user_msg, history)
-            context["system_prompt"] = strict_no_question_prompt
-            if _contains_questions(response):
-                response = _remove_questions(response)
-
-        # Guardrail：followup 模式必須輸出三段式；若模型沒照做，追加更嚴格指令後 retry 一次
-        if intent == "CHAT_FOLLOWUP":
-            required_markers = [
-                "### 原理總覽",
-                "### 這份報告如何推導",
-                "### 如何解讀這份結果",
-                "### 還可以回答的問題",
-            ]
-            if not all(m in (response or "") for m in required_markers):
-                strict_prompt = (
-                    "你上一輪沒有依規定格式輸出。這一輪必須嚴格遵守輸出格式，"
-                    "並且一定要包含四個標題：### 原理總覽 / ### 這份報告如何推導 / ### 如何解讀這份結果 / ### 還可以回答的問題。\n"
-                    "注意：只做原理解說，不要給建議；不要問用戶問題；不要輸出任何 C_/R_ 代碼或公式。\n\n"
-                    + system_prompt
-                )
-                response = call_gemini_logic(strict_prompt, user_msg, history)
-                context["system_prompt"] = strict_prompt
-                if _contains_questions(response):
-                    response = _remove_questions(response)
-
-        # 最終保底：任何模式都不露出內部代碼；原理解讀模式也保持不反問
+        # 精實化：只呼叫模型一次；其餘用本地後處理做保底（降低延遲/成本/不確定性）
         response = _strip_internal_refs(response)
+        if _contains_questions(response):
+            response = _remove_questions(response)
+        if intent == "CHAT_FOLLOWUP":
+            response = _ensure_followup_format(response)
 
         # 若看起來超出知識庫/專業高風險領域：先保留既有回答，再補上「建議諮詢真人」提示
         need_escalation, escalation_note = _needs_human_escalation(latest_q, response)
